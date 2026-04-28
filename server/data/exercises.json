@@ -1,0 +1,1459 @@
+[
+  {
+    "id": "pushup",
+    "name": "Flexão de Braços",
+    "name_en": "Pushups",
+    "muscle_groups": [
+      "peito",
+      "ombros",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Manter o core ativado e não deixar a anca cair.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "db_bench_press",
+    "name": "Supino com Halteres",
+    "name_en": "Dumbbell Bench Press",
+    "muscle_groups": [
+      "peito",
+      "ombros"
+    ],
+    "equipment": [
+      "halteres",
+      "banco"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Controlar a descida e manter as omoplatas juntas.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "pullup",
+    "name": "Elevações",
+    "name_en": "Pull-ups",
+    "muscle_groups": [
+      "costas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Evitar balanço excessivo a menos que seja kipping (Crossfit).",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "db_row",
+    "name": "Remada com Halteres",
+    "name_en": "Dumbbell Row",
+    "muscle_groups": [
+      "costas"
+    ],
+    "equipment": [
+      "halteres",
+      "banco"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Manter as costas direitas.",
+    "default_reps": "10-12",
+    "default_time": 0
+  },
+  {
+    "id": "overhead_press",
+    "name": "Press Militar (Barra)",
+    "name_en": "Overhead Press",
+    "muscle_groups": [
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Não arquear demasiado a lombar.",
+    "default_reps": "6-10",
+    "default_time": 0
+  },
+  {
+    "id": "squat",
+    "name": "Agachamento Livre",
+    "name_en": "Air Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Peso nos calcanhares, joelhos para fora.",
+    "default_reps": "15-20",
+    "default_time": 0
+  },
+  {
+    "id": "back_squat",
+    "name": "Agachamento com Barra",
+    "name_en": "Back Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Manter o peito aberto.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "kettlebell_swing",
+    "name": "Kettlebell Swing",
+    "name_en": "Kettlebell Swing",
+    "muscle_groups": [
+      "glúteos",
+      "costas",
+      "core"
+    ],
+    "equipment": [
+      "kettlebells"
+    ],
+    "type": [
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Dobradiça de anca, não é um agachamento.",
+    "default_reps": "15-25",
+    "default_time": 0
+  },
+  {
+    "id": "plank",
+    "name": "Prancha",
+    "name_en": "Plank",
+    "muscle_groups": [
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Corpo em linha reta.",
+    "default_reps": "0",
+    "default_time": 45
+  },
+  {
+    "id": "burpee",
+    "name": "Burpees",
+    "name_en": "Burpees",
+    "muscle_groups": [
+      "corpo inteiro"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Tocar com o peito no chão.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "bike",
+    "name": "Bicicleta Estática",
+    "name_en": "Stationary Bike",
+    "muscle_groups": [
+      "pernas"
+    ],
+    "equipment": [
+      "bicicleta estática"
+    ],
+    "type": [
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Ajustar o selim à altura correta.",
+    "default_reps": "0",
+    "default_time": 300
+  },
+  {
+    "id": "treadmill",
+    "name": "Corrida na Passadeira",
+    "name_en": "Treadmill Run",
+    "muscle_groups": [
+      "pernas"
+    ],
+    "equipment": [
+      "passadeira"
+    ],
+    "type": [
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Usar calçado adequado.",
+    "default_reps": "0",
+    "default_time": 300
+  },
+  {
+    "id": "hip_thrust",
+    "name": "Hip Thrust",
+    "name_en": "Hip Thrust",
+    "muscle_groups": [
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica",
+      "halteres",
+      "banco"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Queixo no peito, estender totalmente a anca.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "monster_walk",
+    "name": "Monster Walk (Banda)",
+    "name_en": "Monster Walk",
+    "muscle_groups": [
+      "glúteos"
+    ],
+    "equipment": [
+      "elásticos"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Manter a tensão na banda.",
+    "default_reps": "20-30 passos",
+    "default_time": 0
+  },
+  {
+    "id": "hyperextension_45",
+    "name": "45º Hyperextension",
+    "name_en": "45 Degree Hyperextension",
+    "muscle_groups": [
+      "glúteos",
+      "lombar"
+    ],
+    "equipment": [
+      "banco",
+      "halteres"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Arredondar ligeiramente as costas para focar no glúteo.",
+    "default_reps": "12-15",
+    "default_time": 0
+  },
+  {
+    "id": "hip_abduction_pulses",
+    "name": "Hip Abduction Pulses",
+    "name_en": "Hip Abduction Pulses",
+    "muscle_groups": [
+      "glúteos"
+    ],
+    "equipment": [
+      "elásticos",
+      "máquina"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Tronco inclinado à frente.",
+    "default_reps": "25",
+    "default_time": 0
+  },
+  {
+    "id": "deficit_reverse_lunge",
+    "name": "Deficit Reverse Lunge",
+    "name_en": "Deficit Reverse Lunge",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "halteres",
+      "banco"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Controle total no pé que desce.",
+    "default_reps": "8-10 por perna",
+    "default_time": 0
+  },
+  {
+    "id": "romanian_deadlift",
+    "name": "Romanian Deadlift",
+    "name_en": "Romanian Deadlift",
+    "muscle_groups": [
+      "isquiotibiais",
+      "glúteos",
+      "costas"
+    ],
+    "equipment": [
+      "barra olímpica",
+      "halteres"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Manter a barra colada às pernas.",
+    "default_reps": "10-12",
+    "default_time": 0
+  },
+  {
+    "id": "military_press_built",
+    "name": "Military Press",
+    "name_en": "Military Press",
+    "muscle_groups": [
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica",
+      "halteres"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Trancar o core.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "wide_grip_pulldown",
+    "name": "Wide Grip Pulldown",
+    "name_en": "Wide Grip Pulldown",
+    "muscle_groups": [
+      "costas"
+    ],
+    "equipment": [
+      "máquina",
+      "elásticos"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Puxar até ao peito superior.",
+    "default_reps": "10-12",
+    "default_time": 0
+  },
+  {
+    "id": "chin_up",
+    "name": "Chin-ups",
+    "name_en": "Chin-ups",
+    "muscle_groups": [
+      "costas",
+      "bíceps"
+    ],
+    "equipment": [
+      "barra de pull-ups",
+      "elásticos"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Amplitude total do movimento.",
+    "default_reps": "MAX",
+    "default_time": 0
+  },
+  {
+    "id": "stiff_leg_deadlift",
+    "name": "Stiff Leg Deadlift",
+    "name_en": "Stiff Leg Deadlift",
+    "muscle_groups": [
+      "isquiotibiais",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica",
+      "halteres"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Joelhos quase trancados, focar no estiramento.",
+    "default_reps": "10",
+    "default_time": 0
+  },
+  {
+    "id": "sumo_leg_press",
+    "name": "Sumo Leg Press",
+    "name_en": "Sumo Leg Press",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "máquina",
+      "barra olímpica"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Pés afastados e rodados para fora.",
+    "default_reps": "10",
+    "default_time": 0
+  },
+  {
+    "id": "glute_kickback",
+    "name": "Glute Kickback",
+    "name_en": "Glute Kickback",
+    "muscle_groups": [
+      "glúteos"
+    ],
+    "equipment": [
+      "elásticos",
+      "máquina"
+    ],
+    "type": [
+      "força",
+      "built"
+    ],
+    "safety_notes": "Controlar o retorno da perna.",
+    "default_reps": "15 por perna",
+    "default_time": 0
+  },
+  {
+    "id": "v_ups",
+    "name": "Unilateral V-Ups",
+    "name_en": "V-Ups",
+    "muscle_groups": [
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Tocar no pé alternadamente.",
+    "default_reps": "16-20",
+    "default_time": 0
+  },
+  {
+    "id": "inchworms",
+    "name": "Inchworms",
+    "name_en": "Inchworms",
+    "muscle_groups": [
+      "core",
+      "ombros"
+    ],
+    "equipment": [],
+    "type": [
+      "força",
+      "crossfit",
+      "built"
+    ],
+    "safety_notes": "Caminhar com as mãos até à prancha.",
+    "default_reps": "10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_thruster",
+    "name": "Thruster (Barra)",
+    "name_en": "Barbell Thruster",
+    "muscle_groups": [
+      "pernas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Queda completa no agachamento e extensão total nas ancas.",
+    "default_reps": "21-15-9",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_clean",
+    "name": "Clean (Barra)",
+    "name_en": "Power Clean",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Extensão total das ancas antes de puxar os cotovelos.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_snatch",
+    "name": "Snatch (Barra)",
+    "name_en": "Power Snatch",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Barra perto do corpo. Extensão total das ancas.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_clean_jerk",
+    "name": "Clean and Jerk (Barra)",
+    "name_en": "Clean and Jerk",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Dois movimentos explosivos distintos. Receção em split ou power.",
+    "default_reps": "3-5",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_deadlift",
+    "name": "Peso Morto (Barra)",
+    "name_en": "Deadlift",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Costas neutras, barra junto ao corpo durante toda a subida.",
+    "default_reps": "5-15",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_sumo_dl",
+    "name": "Sumo Deadlift High Pull",
+    "name_en": "Sumo Deadlift High Pull",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Ancas fora na posição sumo. Puxar cotovelos alto.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_backsquat",
+    "name": "Back Squat (Barra)",
+    "name_en": "Back Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Profundidade abaixo do paralelo. Joelhos sobre os pés.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_frontsquat",
+    "name": "Front Squat (Barra)",
+    "name_en": "Front Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos",
+      "core"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Cotovelos altos para manter rack position. Tronco vertical.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_ohsquat",
+    "name": "Overhead Squat (Barra)",
+    "name_en": "Overhead Squat",
+    "muscle_groups": [
+      "pernas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Barra sobre a linha média, peito expansivo, core muito activo.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_press",
+    "name": "Press Overhead (Barra)",
+    "name_en": "Shoulder Press",
+    "muscle_groups": [
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Glúteos e core contraídos. Cabeça move para frente ao topo.",
+    "default_reps": "5-8",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_push_press",
+    "name": "Push Press (Barra)",
+    "name_en": "Push Press",
+    "muscle_groups": [
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Flexão rápida nos joelhos para criar impulso antes de pressionar.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_push_jerk",
+    "name": "Push Jerk (Barra)",
+    "name_en": "Push Jerk",
+    "muscle_groups": [
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Mergulhar sob a barra em flexão de joelhos na receção.",
+    "default_reps": "3-7",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_hang_clean",
+    "name": "Hang Power Clean (Barra)",
+    "name_en": "Hang Power Clean",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Posição inicial na dobra da anca. Extensão explosiva antes do pull.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_hang_snatch",
+    "name": "Hang Power Snatch (Barra)",
+    "name_en": "Hang Power Snatch",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Ancas altas, barra muito perto, bar path vertical.",
+    "default_reps": "3-7",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_lunge",
+    "name": "Front-rack Lunge (Barra)",
+    "name_en": "Barbell Front-rack Lunge",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Cotovelos altos na rack position durante o lunge.",
+    "default_reps": "10-20",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_benchpress",
+    "name": "Supino com Barra",
+    "name_en": "Bench Press",
+    "muscle_groups": [
+      "peito",
+      "ombros"
+    ],
+    "equipment": [
+      "barra olímpica",
+      "banco"
+    ],
+    "type": [
+      "força"
+    ],
+    "safety_notes": "Arco natural na lombar. Nunca treinar sem safety bars.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "barbell_goodmorning",
+    "name": "Good Morning (Barra)",
+    "name_en": "Good Morning",
+    "muscle_groups": [
+      "costas",
+      "glúteos"
+    ],
+    "equipment": [
+      "barra olímpica"
+    ],
+    "type": [
+      "força",
+      "crossfit"
+    ],
+    "safety_notes": "Barra nas trapézias. Flexão da anca com coluna neutra.",
+    "default_reps": "10-12",
+    "default_time": 0
+  },
+  {
+    "id": "db_thruster",
+    "name": "Thruster (Halteres)",
+    "name_en": "Dumbbell Thruster",
+    "muscle_groups": [
+      "pernas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Controlar a descida e extensão total no topo.",
+    "default_reps": "12-21",
+    "default_time": 0
+  },
+  {
+    "id": "db_power_snatch",
+    "name": "Power Snatch (Halteres)",
+    "name_en": "Dumbbell Power Snatch",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Sequência de salto, shrug e mergulho. Braço totalmente estendido no topo.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "db_power_clean",
+    "name": "Power Clean (Halteres)",
+    "name_en": "Dumbbell Power Clean",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "ombros"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Posição de rack com halteres nos ombros.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "db_hang_clean",
+    "name": "Hang Power Clean (Halteres)",
+    "name_en": "Dumbbell Hang Power Clean",
+    "muscle_groups": [
+      "costas",
+      "pernas"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Posição inicial na anca. Explosão de joelhos e ancas.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "db_push_jerk",
+    "name": "Push Jerk (Halteres)",
+    "name_en": "Dumbbell Push Jerk",
+    "muscle_groups": [
+      "ombros",
+      "pernas"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Mergulhar sob os halteres. Receção activa com cotovelos bloqueados.",
+    "default_reps": "8-12",
+    "default_time": 0
+  },
+  {
+    "id": "db_push_press",
+    "name": "Push Press (Halteres)",
+    "name_en": "Dumbbell Push Press",
+    "muscle_groups": [
+      "ombros",
+      "pernas"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Impulso das pernas para criar ritmo na pressão.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "db_ohs",
+    "name": "Overhead Squat (Haltere)",
+    "name_en": "Dumbbell Overhead Squat",
+    "muscle_groups": [
+      "pernas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Um ou dois halteres. Cotovelo bloqueado sobre a cabeça.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "db_front_squat",
+    "name": "Front Squat (Halteres)",
+    "name_en": "Dumbbell Front Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força",
+      "built"
+    ],
+    "safety_notes": "Halteres em rack position. Cotovelos paralelos ao chão.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "db_lunge_oh",
+    "name": "Overhead Lunge (Halteres)",
+    "name_en": "Dumbbell Overhead Walking Lunge",
+    "muscle_groups": [
+      "pernas",
+      "glúteos",
+      "ombros"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força",
+      "built"
+    ],
+    "safety_notes": "Braços totalmente estendidos. Joelho da perna de trás perto do chão.",
+    "default_reps": "10-20",
+    "default_time": 0
+  },
+  {
+    "id": "db_front_rack_lunge",
+    "name": "Front-rack Lunge (Halteres)",
+    "name_en": "Dumbbell Front-rack Lunge",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força",
+      "built"
+    ],
+    "safety_notes": "Halteres nos ombros durante o lunge.",
+    "default_reps": "10-20",
+    "default_time": 0
+  },
+  {
+    "id": "db_farmers_carry",
+    "name": "Farmers Carry (Halteres)",
+    "name_en": "Dumbbell Farmers Carry",
+    "muscle_groups": [
+      "core",
+      "costas",
+      "pernas"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Ombros para trás e para baixo. Olhar em frente.",
+    "default_reps": "20-40m",
+    "default_time": 0
+  },
+  {
+    "id": "db_turkish_getup",
+    "name": "Turkish Get-up (Haltere)",
+    "name_en": "Dumbbell Turkish Get-up",
+    "muscle_groups": [
+      "ombros",
+      "core",
+      "pernas"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Olhos sempre para o haltere. Movimento lento e controlado.",
+    "default_reps": "3-5 por lado",
+    "default_time": 0
+  },
+  {
+    "id": "db_deadlift",
+    "name": "Peso Morto (Halteres)",
+    "name_en": "Dumbbell Deadlift",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "halteres"
+    ],
+    "type": [
+      "crossfit",
+      "força"
+    ],
+    "safety_notes": "Manter as costas neutras. Halteres em linha com os pés.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "kb_swing",
+    "name": "Kettlebell Swing",
+    "name_en": "Kettlebell Swing",
+    "muscle_groups": [
+      "glúteos",
+      "costas",
+      "core"
+    ],
+    "equipment": [
+      "kettlebells"
+    ],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Movimento de anca, não de braços. Topo ao nível dos ombros ou overhead.",
+    "default_reps": "15-21",
+    "default_time": 0
+  },
+  {
+    "id": "kb_snatch",
+    "name": "Kettlebell Snatch",
+    "name_en": "Kettlebell Snatch",
+    "muscle_groups": [
+      "costas",
+      "ombros",
+      "glúteos"
+    ],
+    "equipment": [
+      "kettlebells"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Evitar 'chutar' o pulso na cima. Arm lock total.",
+    "default_reps": "5-10 por lado",
+    "default_time": 0
+  },
+  {
+    "id": "kb_goblet_squat",
+    "name": "Goblet Squat (Kettlebell)",
+    "name_en": "Kettlebell Goblet Squat",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [
+      "kettlebells"
+    ],
+    "type": [
+      "crossfit",
+      "força",
+      "built"
+    ],
+    "safety_notes": "Kettlebell junto ao peito. Cotovelos para dentro dos joelhos.",
+    "default_reps": "12-20",
+    "default_time": 0
+  },
+  {
+    "id": "wallball",
+    "name": "Wall-ball Shots",
+    "name_en": "Wall-ball Shot",
+    "muscle_groups": [
+      "pernas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Agachamento completo. Lançar para o alvo a 3m.",
+    "default_reps": "15-21",
+    "default_time": 0
+  },
+  {
+    "id": "box_jump",
+    "name": "Box Jumps",
+    "name_en": "Box Jump",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Extensão total das ancas no topo. Saltar e não escalar.",
+    "default_reps": "15-21",
+    "default_time": 0
+  },
+  {
+    "id": "muscle_up_rings",
+    "name": "Muscle-up (Argolas)",
+    "name_en": "Ring Muscle-up",
+    "muscle_groups": [
+      "costas",
+      "ombros",
+      "peito"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Requer kipping. Cotovelos acima das argolas na transição.",
+    "default_reps": "5-10",
+    "default_time": 0
+  },
+  {
+    "id": "chest_to_bar",
+    "name": "Chest-to-bar Pull-up",
+    "name_en": "Chest-to-bar Pull-up",
+    "muscle_groups": [
+      "costas",
+      "ombros"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "O peito deve tocar a barra. Kipping permitido.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "toes_to_bar",
+    "name": "Toes-to-bar",
+    "name_en": "Kipping Toes-to-bar",
+    "muscle_groups": [
+      "core",
+      "costas"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Coordenação com swing. Os dois pés tocam a barra em simultâneo.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "hspu",
+    "name": "Handstand Push-up",
+    "name_en": "Handstand Push-up",
+    "muscle_groups": [
+      "ombros",
+      "core",
+      "peito"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Cabeça entre as mãos no fundo. Core apertado para não arquear.",
+    "default_reps": "5-15",
+    "default_time": 0
+  },
+  {
+    "id": "rope_climb",
+    "name": "Subida de Corda",
+    "name_en": "Rope Climb",
+    "muscle_groups": [
+      "costas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Técnica de J-hook para proteger os braços. Descida controlada.",
+    "default_reps": "3-5 ascents",
+    "default_time": 0
+  },
+  {
+    "id": "ghd_situp",
+    "name": "GHD Sit-up",
+    "name_en": "GHD Sit-up",
+    "muscle_groups": [
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Progredir gradualmente para evitar DOMS severo. Não usar na primeira sessão.",
+    "default_reps": "20-30",
+    "default_time": 0
+  },
+  {
+    "id": "double_under",
+    "name": "Double-unders",
+    "name_en": "Double-under",
+    "muscle_groups": [
+      "core",
+      "pernas"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Salto de tornozelo, não de joelho. Pulsos giram, não os braços.",
+    "default_reps": "50-100",
+    "default_time": 0
+  },
+  {
+    "id": "pistol_squat",
+    "name": "Pistol Squat",
+    "name_en": "Single-leg Squat (Pistol)",
+    "muscle_groups": [
+      "pernas",
+      "glúteos",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "calistenia"
+    ],
+    "safety_notes": "Progridir com box para controlo de amplitude.",
+    "default_reps": "5-10 por lado",
+    "default_time": 0
+  },
+  {
+    "id": "handstand_walk",
+    "name": "Handstand Walk",
+    "name_en": "Handstand Walk",
+    "muscle_groups": [
+      "ombros",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Dedos afastados, olhar para as mãos. Core muito contraído.",
+    "default_reps": "5-10m",
+    "default_time": 0
+  },
+  {
+    "id": "box_step_up",
+    "name": "Box Step-up (com carga)",
+    "name_en": "Weighted Box Step-up",
+    "muscle_groups": [
+      "pernas",
+      "glúteos"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox",
+      "built"
+    ],
+    "safety_notes": "Subir com o pé inteiro na caixa. Extensão completa no topo.",
+    "default_reps": "20-30",
+    "default_time": 0
+  },
+  {
+    "id": "slam_ball",
+    "name": "Slam Ball",
+    "name_en": "Slam Ball",
+    "muscle_groups": [
+      "core",
+      "ombros",
+      "costas"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Extensão total acima da cabeça antes de atirar.",
+    "default_reps": "15-20",
+    "default_time": 0
+  },
+  {
+    "id": "row_erg",
+    "name": "Remo (Ergómetro)",
+    "name_en": "Row (Erg)",
+    "muscle_groups": [
+      "costas",
+      "pernas",
+      "core"
+    ],
+    "equipment": [
+      "remo"
+    ],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Puxar primeiro com as pernas, depois inclinar o tronco e por último puxar os braços.",
+    "default_reps": "500-1000m",
+    "default_time": 60
+  },
+  {
+    "id": "ski_erg",
+    "name": "SkiErg",
+    "name_en": "SkiErg",
+    "muscle_groups": [
+      "costas",
+      "ombros",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Dobrar a anca antes de puxar. Extensão total entre cada rep.",
+    "default_reps": "500-1000m",
+    "default_time": 60
+  },
+  {
+    "id": "run",
+    "name": "Corrida",
+    "name_en": "Run",
+    "muscle_groups": [
+      "pernas",
+      "core"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox",
+      "força"
+    ],
+    "safety_notes": "Ritmo baseado no vo2max. Para WODs, manter pace que não destrua o metcon.",
+    "default_reps": "400m",
+    "default_time": 120
+  },
+  {
+    "id": "burpee_box_jump_over",
+    "name": "Burpee Box Jump-over",
+    "name_en": "Burpee Box Jump-over",
+    "muscle_groups": [
+      "corpo inteiro"
+    ],
+    "equipment": [],
+    "type": [
+      "crossfit",
+      "hyrox"
+    ],
+    "safety_notes": "Burpee completo com o peito no chão. Saltar sobre a caixa (não subir).",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": "ring_dip",
+    "name": "Ring Dips",
+    "name_en": "Ring Dip",
+    "muscle_groups": [
+      "peito",
+      "ombros"
+    ],
+    "equipment": [
+      "barra de pull-ups"
+    ],
+    "type": [
+      "crossfit"
+    ],
+    "safety_notes": "Argolas estabilizadas antes de iniciar. Profundidade abaixo dos ombros.",
+    "default_reps": "10-15",
+    "default_time": 0
+  },
+  {
+    "id": 78,
+    "name": "a 5 minutos de cardio ligeiro*",
+    "muscle_groups": [],
+    "equipment": [],
+    "type": "built",
+    "source": "custom-library"
+  }
+]

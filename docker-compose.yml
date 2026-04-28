@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: fittraining_db
+    restart: always
+    environment:
+      POSTGRES_DB: fittraining
+      POSTGRES_USER: fittraining_user
+      POSTGRES_PASSWORD: fittraining_password
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432" # Use 5433 on host to avoid conflict with Guacamole
+
+  app:
+    build: .
+    container_name: fittraining_app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://fittraining_user:fittraining_password@db:5432/fittraining?schema=public
+      - JWT_SECRET=fittraining_super_secret_jwt
+      - PORT=8510
+    ports:
+      - "8510:8510"

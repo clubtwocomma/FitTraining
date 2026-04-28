@@ -1,0 +1,24 @@
+{
+    "name": "fittraining-backend",
+    "version": "1.0.0",
+    "description": "Backend for FitTraining Workout App",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.5",
+        "dotenv": "^17.4.0",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.4.1",
+        "jsonwebtoken": "^9.0.3",
+        "prisma": "^5.22.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

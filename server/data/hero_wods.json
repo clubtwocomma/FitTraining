@@ -1,0 +1,1175 @@
+[
+    {
+        "id": "murph",
+        "name": "Murph",
+        "hero": "Navy Lieutenant Michael Murphy",
+        "type": "Hero WOD",
+        "description": "For time:\n1 mile Run\n100 Pull-ups\n200 Push-ups\n300 Air Squats\n1 mile Run\nPartition the pull-ups, push-ups, and squats as needed. Start and finish with a mile run. If you’ve got a 9 kg vest or body armor, wear it.",
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "1.6 km",
+                "duration": 480
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "100",
+                "duration": 600
+            },
+            {
+                "name": "Flexões (Push-ups)",
+                "reps": "200",
+                "duration": 600
+            },
+            {
+                "name": "Agachamentos (Air Squats)",
+                "reps": "300",
+                "duration": 600
+            },
+            {
+                "name": "Corrida",
+                "reps": "1.6 km",
+                "duration": 480
+            }
+        ],
+        "stimulus": "Resistência mental e volume elevado com calistenia dividida.",
+        "isHero": true
+    },
+    {
+        "id": "dt",
+        "name": "DT",
+        "hero": "Staff Sergeant Timothy P. Davis",
+        "type": "Hero WOD",
+        "description": "5 Rounds for time:\n12 Deadlifts (70/48 kg)\n9 Hang Power Cleans (70/48 kg)\n6 Push Jerks (70/48 kg)",
+        "workout": [
+            {
+                "name": "Peso Morto (Deadlift)",
+                "reps": "12",
+                "weight_h": "70kg",
+                "weight_m": "47kg",
+                "duration": 45
+            },
+            {
+                "name": "Hang Power Clean",
+                "reps": "9",
+                "weight_h": "70kg",
+                "weight_m": "47kg",
+                "duration": 45
+            },
+            {
+                "name": "Push Jerk",
+                "reps": "6",
+                "weight_h": "70kg",
+                "weight_m": "47kg",
+                "duration": 30
+            }
+        ],
+        "rounds": 5,
+        "stimulus": "Ciclo de barra pesado e fadiga de preensão.",
+        "isHero": true
+    },
+    {
+        "id": "randy",
+        "name": "Randy",
+        "hero": "LAPD Veteran Randy Simmons",
+        "type": "Hero WOD",
+        "description": "For time:\n75 Power Snatches (34/25 kg)",
+        "workout": [
+            {
+                "name": "Power Snatch",
+                "reps": "75",
+                "weight_h": "34kg",
+                "weight_m": "25kg",
+                "duration": 420
+            }
+        ],
+        "stimulus": "Sprint de alta repetição e resistência de ombros.",
+        "isHero": true
+    },
+    {
+        "id": "nate",
+        "name": "Nate",
+        "hero": "Chief Petty Officer Nate Hardy",
+        "type": "Hero WOD",
+        "description": "AMRAP 20 minutes:\n2 Muscle-ups\n4 Handstand Push-ups\n8 Kettlebell Swings (2-pood/1.5-pood)",
+        "workout": [
+            {
+                "name": "Muscle-ups",
+                "reps": "2",
+                "duration": 30
+            },
+            {
+                "name": "Handstand Push-ups",
+                "reps": "4",
+                "duration": 45
+            },
+            {
+                "name": "Kettlebell Swings",
+                "reps": "8",
+                "weight_h": "32kg",
+                "weight_m": "24kg",
+                "duration": 30
+            }
+        ],
+        "amrap": 20,
+        "stimulus": "Ginástica avançada e potência de anca sob fadiga.",
+        "isHero": true
+    },
+    {
+        "id": "tribute_911",
+        "name": "9/11 Tribute",
+        "hero": "Fallen of September 11, 2001",
+        "type": "Tribute WOD",
+        "description": "For time:\n2001m Run/Row\n11 Box Jumps\n11 Thrusters\n11 Burpees\n11 Power Cleans\n11 HSPU\n11 KB Swings\n11 Toes-to-Bar\n11 Deadlifts\n11 Push Jerks\n2001m Run/Row",
+        "stimulus": "Volume épico, misto de ergómetros e haltereofilismo para homenagear os bombeiros, polícias e cidadãos.",
+        "isHero": false,
+        "workout": [
+            {
+                "name": "Run/Row",
+                "reps": "2001m"
+            },
+            {
+                "name": "Box Jumps",
+                "reps": "11"
+            },
+            {
+                "name": "Thrusters",
+                "reps": "11"
+            },
+            {
+                "name": "Burpees",
+                "reps": "11"
+            },
+            {
+                "name": "Power Cleans",
+                "reps": "11"
+            },
+            {
+                "name": "HSPU",
+                "reps": "11"
+            },
+            {
+                "name": "KB Swings",
+                "reps": "11"
+            },
+            {
+                "name": "Toes-to-Bar",
+                "reps": "11"
+            },
+            {
+                "name": "Deadlifts",
+                "reps": "11"
+            },
+            {
+                "name": "Push Jerks",
+                "reps": "11"
+            },
+            {
+                "name": "Run/Row",
+                "reps": "2001m"
+            }
+        ]
+    },
+    {
+        "id": "jt",
+        "name": "JT",
+        "hero": "Petty Officer 1st Class Jeff Taylor",
+        "type": "Hero WOD",
+        "description": "21-15-9 reps for time of:\nHandstand push-ups\nRing dips\nPush-ups",
+        "workout": [
+            {
+                "name": "Handstand Push-ups",
+                "reps": "21-15-9"
+            },
+            {
+                "name": "Ring Dips",
+                "reps": "21-15-9"
+            },
+            {
+                "name": "Flexões (Push-ups)",
+                "reps": "21-15-9"
+            }
+        ],
+        "stimulus": "Fadiga extrema nos tríceps e peito. Treino superior completo e severo.",
+        "isHero": true
+    },
+    {
+        "id": "michael",
+        "name": "Michael",
+        "hero": "Navy Lieutenant Michael McGreevy",
+        "type": "Hero WOD",
+        "description": "3 rounds for time of:\nRun 800 meters\n50 Back extensions\n50 Sit-ups",
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "800m"
+            },
+            {
+                "name": "Extensões Lombar (Back Extensions)",
+                "reps": "50"
+            },
+            {
+                "name": "Abdominais (Sit-ups)",
+                "reps": "50"
+            }
+        ],
+        "rounds": 3,
+        "stimulus": "Core dominante fundido com corrida monostrutural média.",
+        "isHero": true
+    },
+    {
+        "id": "badger",
+        "name": "Badger",
+        "hero": "Navy Chief Petty Officer Mark Carter",
+        "type": "Hero WOD",
+        "description": "3 rounds for time of:\n30 Squat cleans (43/29 kg)\n30 Pull-ups\nRun 800 meters",
+        "workout": [
+            {
+                "name": "Squat Cleans (43/29 kg)",
+                "reps": "30"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "30"
+            },
+            {
+                "name": "Corrida",
+                "reps": "800m"
+            }
+        ],
+        "rounds": 3,
+        "stimulus": "Levantamentos olímpicos leves combinados com alta corrida e flexões.",
+        "isHero": true
+    },
+    {
+        "id": "tommy_v",
+        "name": "Tommy V",
+        "hero": "Senior Chief Petty Officer Thomas J. Valentine",
+        "type": "Hero WOD",
+        "description": "For time:\n21 Thrusters (52/34 kg)\n12 Rope Climbs (15 ft)\n15 Thrusters\n9 Rope Climbs\n9 Thrusters\n6 Rope Climbs",
+        "stimulus": "Capacidade pura de tracção vs pernas num ambiente de stress intenso.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Thrusters (52/34 kg)",
+                "reps": "21"
+            },
+            {
+                "name": "Rope Climbs (15 ft)",
+                "reps": "12"
+            },
+            {
+                "name": "Thrusters",
+                "reps": "15"
+            },
+            {
+                "name": "Rope Climbs",
+                "reps": "9"
+            },
+            {
+                "name": "Thrusters",
+                "reps": "9"
+            },
+            {
+                "name": "Rope Climbs",
+                "reps": "6"
+            }
+        ]
+    },
+    {
+        "id": "the_seven",
+        "name": "The Seven",
+        "hero": "CIA Officers killed logically on Dec 30 2009",
+        "type": "Hero WOD",
+        "description": "7 rounds for time of:\n7 Handstand push-ups\n7 Thrusters (61/43 kg)\n7 Knees-to-elbows\n7 Deadlifts (111/75 kg)\n7 Burpees\n7 Kettlebell swings (2/1.5 pood)\n7 Pull-ups",
+        "stimulus": "Crossover de todas as modalidades e muito pesado.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Handstand push-ups",
+                "reps": "7"
+            },
+            {
+                "name": "Thrusters (61/43 kg)",
+                "reps": "7"
+            },
+            {
+                "name": "Knees-to-elbows",
+                "reps": "7"
+            },
+            {
+                "name": "Deadlifts (111/75 kg)",
+                "reps": "7"
+            },
+            {
+                "name": "Burpees",
+                "reps": "7"
+            },
+            {
+                "name": "Kettlebell swings (2/1.5 pood)",
+                "reps": "7"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "7"
+            }
+        ],
+        "rounds": 7
+    },
+    {
+        "id": "lumberjack_20",
+        "name": "Lumberjack 20",
+        "hero": "Victims of the Fort Hood terrorist attack",
+        "type": "Hero WOD",
+        "description": "For time:\n20 Deadlifts (125/84 kg)\nRun 400m\n20 KB swings (2/1.5 pood)\nRun 400m\n20 Overhead squats (52/34 kg)\nRun 400m\n20 Burpees\nRun 400m\n20 Chest-to-bar pull-ups\nRun 400m\n20 Box jumps (24/20 in)\nRun 400m\n20 DB Squat Cleans (20/14 kg)\nRun 400m",
+        "stimulus": "Chipper longo intermitente com corrida e variação de carga pesada a moderada.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Deadlifts (125/84 kg)",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "KB swings (2/1.5 pood)",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "Overhead squats (52/34 kg)",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "Burpees",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "Chest-to-bar pull-ups",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            },
+            {
+                "name": "DB Squat Cleans (20/14 kg)",
+                "reps": "20"
+            },
+            {
+                "name": "Run",
+                "reps": "400m"
+            }
+        ]
+    },
+    {
+        "id": "kalsu",
+        "name": "Kalsu",
+        "hero": "1st Lt. James Robert Kalsu",
+        "type": "Hero WOD",
+        "description": "For time:\n100 Thrusters (61/43 kg)\n*5 Burpees at the top of every minute, including the first minute.",
+        "stimulus": "Considerado por muitos o Hero WOD mais doloroso de todos. Teste absoluto de vontade.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Thrusters (61/43 kg)",
+                "reps": "100"
+            }
+        ]
+    },
+    {
+        "id": "chad",
+        "name": "Chad",
+        "hero": "Navy SEAL Chad Wilkinson",
+        "type": "Hero WOD",
+        "description": "For time:\n1000 Box Step-Ups (20 in)\n*Wear a 20/16 kg rucksack",
+        "stimulus": "Desgaste puramente muscular de pernas num único movimento estrito.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Box Step-Ups (20 in)",
+                "reps": "1000"
+            }
+        ]
+    },
+    {
+        "id": "glen",
+        "name": "Glen",
+        "hero": "Former Navy SEAL Glen Doherty",
+        "type": "Hero WOD",
+        "description": "For time:\n61 kg Grace (30 Clean and Jerks)\nRun 1 mile\n10 rope climbs, 15 ft.\nRun 1 mile\n100 burpees",
+        "stimulus": "Um clássico endurance wod com halterofilismo intermédio.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "kg Grace (30 Clean and Jerks)",
+                "reps": "61"
+            },
+            {
+                "name": "Run",
+                "reps": "1 mile"
+            },
+            {
+                "name": "rope climbs, 15 ft.",
+                "reps": "10"
+            },
+            {
+                "name": "Run",
+                "reps": "1 mile"
+            },
+            {
+                "name": "burpees",
+                "reps": "100"
+            }
+        ]
+    },
+    {
+        "id": "loredo",
+        "name": "Loredo",
+        "hero": "U.S. Army Staff Sgt. Edwardo Loredo",
+        "type": "Hero WOD",
+        "description": "6 rounds for time of:\n24 Squats\n24 Push-ups\n24 Walking lunge steps\nRun 400 meters",
+        "stimulus": "Calistenia em bodyweight com condicionamento aeróbio puro.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Squats",
+                "reps": "24"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "24"
+            },
+            {
+                "name": "Walking lunge steps",
+                "reps": "24"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 6
+    },
+    {
+        "id": "bull",
+        "name": "Bull",
+        "hero": "U.S. Marine Corps Capt. Brandon 'Bull' Barrett",
+        "type": "Hero WOD",
+        "description": "2 rounds for time of:\n200 Double-unders\n50 Overhead squats (61/43 kg)\n50 Pull-ups\nRun 1 mile",
+        "stimulus": "Dificuldades com a zona média do corpo e ombros altamente taxativos combinados com salto e corrida.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Double-unders",
+                "reps": "200"
+            },
+            {
+                "name": "Overhead squats (61/43 kg)",
+                "reps": "50"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "50"
+            },
+            {
+                "name": "Run",
+                "reps": "1 mile"
+            }
+        ],
+        "rounds": 2
+    },
+    {
+        "id": "nutts",
+        "name": "Nutts",
+        "hero": "Canadian Armed Forces Lt. Andrew Richard Nuttall",
+        "type": "Hero WOD",
+        "description": "For time:\n10 Handstand push-ups\n15 Deadlifts (113/79 kg)\n25 Box jumps (30/24 in)\n50 Pull-ups\n100 Wall-ball shots (9/6 kg)\n200 Double-unders\nRun 400 meters with a 20/16 kg plate",
+        "stimulus": "Chipper que começa curto e vai aumentando em reps, culminando numa corrida pesada.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Handstand push-ups",
+                "reps": "10"
+            },
+            {
+                "name": "Deadlifts (113/79 kg)",
+                "reps": "15"
+            },
+            {
+                "name": "Box jumps (30/24 in)",
+                "reps": "25"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "50"
+            },
+            {
+                "name": "Wall-ball shots (9/6 kg)",
+                "reps": "100"
+            },
+            {
+                "name": "Double-unders",
+                "reps": "200"
+            },
+            {
+                "name": "Run 400 meters with a 20/16 kg plate",
+                "reps": "1x"
+            }
+        ]
+    },
+    {
+        "id": "rj",
+        "name": "RJ",
+        "hero": "Veteran LAPD officer Robert J. Cottle",
+        "type": "Hero WOD",
+        "description": "5 rounds for time of:\nRun 800 meters\n5 Rope climbs, 15 ft\n50 Push-ups",
+        "stimulus": "Treino longo em que o peito e braços cedem antes do cardio.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Run 800 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Rope climbs, 15 ft",
+                "reps": "5"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "50"
+            }
+        ],
+        "rounds": 5
+    },
+    {
+        "id": "riley",
+        "name": "Riley",
+        "hero": "Army Sgt. 1st Class Riley G. Stephens",
+        "type": "Hero WOD",
+        "description": "For time:\nRun 1.5 miles\n150 burpees\nRun 1.5 miles\nIf you have a 9 kg weight vest, wear it.",
+        "stimulus": "Corrida extrema misturada com 150 burpees desgastantes.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Run",
+                "reps": "1.5 miles"
+            },
+            {
+                "name": "burpees",
+                "reps": "150"
+            },
+            {
+                "name": "Run",
+                "reps": "1.5 miles"
+            },
+            {
+                "name": "If you have a 9 kg weight vest, wear it.",
+                "reps": "1x"
+            }
+        ]
+    },
+    {
+        "id": "holbrook",
+        "name": "Holbrook",
+        "hero": "U.S. Army Capt. Jason Holbrook",
+        "type": "Hero WOD",
+        "description": "10 rounds, each for time, of:\n5 Thrusters (52/34 kg)\n10 Pull-ups\n100-meter Sprint\nRest 1 minute between rounds",
+        "stimulus": "Sprints de tiro e energia ATP/CP altamente taxada em rondas explosivas.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Thrusters (52/34 kg)",
+                "reps": "5"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "10"
+            },
+            {
+                "name": "100-meter Sprint",
+                "reps": "1x"
+            },
+            {
+                "name": "Rest 1 minute between rounds",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 10
+    },
+    {
+        "id": "josh",
+        "name": "Josh",
+        "hero": "U.S. Army Staff Sgt. Joshua Hager",
+        "type": "Hero WOD",
+        "description": "For time:\n21 Overhead squats (43/29 kg)\n42 Pull-ups\n15 Overhead squats (43/29 kg)\n30 Pull-ups\n9 Overhead squats (43/29 kg)\n18 Pull-ups",
+        "stimulus": "Combinação massiva nas articulações do ombro com grande volume.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Overhead squats (43/29 kg)",
+                "reps": "21"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "42"
+            },
+            {
+                "name": "Overhead squats (43/29 kg)",
+                "reps": "15"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "30"
+            },
+            {
+                "name": "Overhead squats (43/29 kg)",
+                "reps": "9"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "18"
+            }
+        ]
+    },
+    {
+        "id": "luke",
+        "name": "Luke",
+        "hero": "Marine Staff Sgt. Leon H. Lucas Jr.",
+        "type": "Hero WOD",
+        "description": "For time:\nRun 400 meters\n15 Clean and jerks (70/48 kg)\nRun 400 meters\n30 Toes-to-bars\nRun 400 meters\n45 Wall-ball shots (9/6 kg)\nRun 400 meters\n45 Kettlebell swings (1.5/1 pood)\nRun 400 meters\n30 Ring dips\nRun 400 meters\n15 Weighted lunges (70/48 kg)\nRun 400 meters",
+        "stimulus": "Corrida intervalada por ginástica e cargas altas.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Clean and jerks (70/48 kg)",
+                "reps": "15"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Toes-to-bars",
+                "reps": "30"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Wall-ball shots (9/6 kg)",
+                "reps": "45"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Kettlebell swings (1.5/1 pood)",
+                "reps": "45"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Ring dips",
+                "reps": "30"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Weighted lunges (70/48 kg)",
+                "reps": "15"
+            },
+            {
+                "name": "Run 400 meters",
+                "reps": "1x"
+            }
+        ]
+    },
+    {
+        "id": "klepto",
+        "name": "Klepto",
+        "hero": "U.S. Air Force Major David 'Klepto' L. Brodeur",
+        "type": "Hero WOD",
+        "description": "4 rounds for time of:\n27 Box jumps (24/20 in)\n20 Burpees\n11 Squat cleans (66/45 kg)",
+        "stimulus": "Limpeza pura e brutal das pernas misturada com saltos.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "27"
+            },
+            {
+                "name": "Burpees",
+                "reps": "20"
+            },
+            {
+                "name": "Squat cleans (66/45 kg)",
+                "reps": "11"
+            }
+        ],
+        "rounds": 4
+    },
+    {
+        "id": "bull",
+        "name": "Spehar",
+        "hero": "Navy Special Warfare Operator U.S. Navy SEAL Nicholas P. Spehar",
+        "type": "Hero WOD",
+        "description": "For time:\n100 Thrusters (61/43 kg)\n75 Chest-to-bar pull-ups\n50 Squat Cleans (61/43 kg)",
+        "stimulus": "61 kg de tortura e trações dolorosas ao peito.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Thrusters (61/43 kg)",
+                "reps": "100"
+            },
+            {
+                "name": "Chest-to-bar pull-ups",
+                "reps": "75"
+            },
+            {
+                "name": "Squat Cleans (61/43 kg)",
+                "reps": "50"
+            }
+        ]
+    },
+    {
+        "id": "small",
+        "name": "Small",
+        "hero": "U.S. Army Staff Sgt. Marc Small",
+        "type": "Hero WOD",
+        "description": "3 rounds for time of:\nRow 1000 meters\n50 Burpees\n50 Box jumps (24/20 in)\nRun 800 meters",
+        "stimulus": "Altamente focado no quadríceps e oxigenação longa.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Row 1000 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Burpees",
+                "reps": "50"
+            },
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "50"
+            },
+            {
+                "name": "Run 800 meters",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 3
+    },
+    {
+        "id": "jack",
+        "name": "Jack",
+        "hero": "Army Staff Sgt. Jack M. Martin III",
+        "type": "Hero WOD",
+        "description": "AMRAP 20 minutes:\n10 Push presses (52/34 kg)\n10 KB Swings (1.5/1 pood)\n10 Box jumps (24/20 in)",
+        "stimulus": "Triplete rápido e furioso sem paragens na respiração.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Push presses (52/34 kg)",
+                "reps": "10"
+            },
+            {
+                "name": "KB Swings (1.5/1 pood)",
+                "reps": "10"
+            },
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "10"
+            }
+        ],
+        "amrap": 20
+    },
+    {
+        "id": "eva_strong",
+        "name": "Eva Strong",
+        "hero": "Eva Mireles (Uvalde Teacher)",
+        "type": "Tribute WOD",
+        "description": "With a partner, 5 rounds for time of:\n24 double-unders (each)\n19 toes-to-bars (total)\n2 clean and jerks (total) (93/61 kg)\n400-m run (together)",
+        "stimulus": "Para homenagear Eva, requer companheirismo, peso moderado-pesado e cardio partilhado.",
+        "isHero": false,
+        "workout": [
+            {
+                "name": "double-unders (each)",
+                "reps": "24"
+            },
+            {
+                "name": "toes-to-bars (total)",
+                "reps": "19"
+            },
+            {
+                "name": "clean and jerks (total) (93/61 kg)",
+                "reps": "2"
+            },
+            {
+                "name": "400-m run (together)",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 5
+    },
+    {
+        "id": "donny",
+        "name": "Donny",
+        "hero": "Specialist Donald L. Nichols",
+        "type": "Hero WOD",
+        "description": "21-15-9-9-15-21 reps for time of:\nDeadlifts (102/70 kg)\nBurpees",
+        "workout": [
+            {
+                "name": "Peso Morto (Deadlift)",
+                "reps": "21-15-9-9-15-21"
+            },
+            {
+                "name": "Burpees",
+                "reps": "21-15-9-9-15-21"
+            }
+        ],
+        "stimulus": "Aumento do tempo de tensão no regresso à escala ascendente.",
+        "isHero": true
+    },
+    {
+        "id": "bradley",
+        "name": "Bradley",
+        "hero": "Senior Airman Bradley R. Smith",
+        "type": "Hero WOD",
+        "description": "10 rounds for time of:\nSprint 100 meters\n10 Pull-ups\nSprint 100 meters\n10 Burpees\nRest 30 seconds",
+        "stimulus": "Altíssima potência com descanso calculado enganador.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Sprint 100 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "10"
+            },
+            {
+                "name": "Sprint 100 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Burpees",
+                "reps": "10"
+            },
+            {
+                "name": "Rest 30 seconds",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 10
+    },
+    {
+        "id": "tom",
+        "name": "Tom",
+        "hero": "1st Lt. Thomas M. Martin",
+        "type": "Hero WOD",
+        "description": "AMRAP 25 minutes:\n7 Muscle-ups\n11 Thrusters (70/48 kg)\n14 Toes-to-bars",
+        "stimulus": "Ginástica dura combinada com barras extremamente taxativas em volume baixo-intermédio.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Muscle-ups",
+                "reps": "7"
+            },
+            {
+                "name": "Thrusters (70/48 kg)",
+                "reps": "11"
+            },
+            {
+                "name": "Toes-to-bars",
+                "reps": "14"
+            }
+        ],
+        "amrap": 25
+    },
+    {
+        "id": "white",
+        "name": "White",
+        "hero": "U.S. Army 1st Lt. Ashley White",
+        "type": "Hero WOD",
+        "description": "5 rounds for time of:\n15ft Rope Climb, 3 ascents\n10 Toes-to-bar\n21 Walking lunge steps with 20/16 kg plate held overhead\nRun 400 meters",
+        "workout": [
+            {
+                "name": "Subida de Corda (Rope Climb)",
+                "reps": "3"
+            },
+            {
+                "name": "Pés à Barra (Toes-to-bar)",
+                "reps": "10"
+            },
+            {
+                "name": "Walking Lunges (20/16 kg Plate OH)",
+                "reps": "21"
+            },
+            {
+                "name": "Corrida",
+                "reps": "400m"
+            }
+        ],
+        "rounds": 5,
+        "stimulus": "Fadiga enorme de preensão perante descida estática sobre halteres.",
+        "isHero": true
+    },
+    {
+        "id": "jared",
+        "name": "Jared",
+        "hero": "U.S. Army Master Sgt. Jared N. Van Aalst",
+        "type": "Hero WOD",
+        "description": "4 rounds for time of:\nRun 800 meters\n40 Pull-ups\n70 Push-ups",
+        "stimulus": "Endurance puxado para grandes grupos musculares da parte superior.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Run 800 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "40"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "70"
+            }
+        ],
+        "rounds": 4
+    },
+    {
+        "id": "sham",
+        "name": "Sham",
+        "hero": "Staff Sgt. Ali Shigri",
+        "type": "Hero WOD",
+        "description": "7 rounds for time of:\n11 Body-weight deadlifts\n100-meter sprint",
+        "stimulus": "Movimento de sprint balístico e tração corporal.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Body-weight deadlifts",
+                "reps": "11"
+            },
+            {
+                "name": "100-meter sprint",
+                "reps": "1x"
+            }
+        ],
+        "rounds": 7
+    },
+    {
+        "id": "blake",
+        "name": "Blake",
+        "hero": "Navy Senior Chief Cryptologic Technician David Blake McLendon",
+        "type": "Hero WOD",
+        "description": "4 rounds for time of:\n100-foot Overhead walking lunge (20/16 kg plate)\n30 Box jumps (24/20 in)\n20 Wall-ball shots (9/6 kg)\n10 Handstand push-ups",
+        "stimulus": "Teste gigante de coordenação sob exaustão nas pernas.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "100-foot Overhead walking lunge (20/16 kg plate)",
+                "reps": "1x"
+            },
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "30"
+            },
+            {
+                "name": "Wall-ball shots (9/6 kg)",
+                "reps": "20"
+            },
+            {
+                "name": "Handstand push-ups",
+                "reps": "10"
+            }
+        ],
+        "rounds": 4
+    },
+    {
+        "id": "garrett",
+        "name": "Garrett",
+        "hero": "Marine Capt. Garrett T. Lawton",
+        "type": "Hero WOD",
+        "description": "3 rounds for time of:\n75 Squats\n25 Ring handstand push-ups\n25 L-pull-ups",
+        "workout": [
+            {
+                "name": "Agachamentos (Air Squats)",
+                "reps": "75"
+            },
+            {
+                "name": "Ring Handstand Push-ups",
+                "reps": "25"
+            },
+            {
+                "name": "L-pull-ups",
+                "reps": "25"
+            }
+        ],
+        "rounds": 3,
+        "stimulus": "Ginástica em rings, incrivelmente exigente e sem barras limpas.",
+        "isHero": true
+    },
+    {
+        "id": "mcghee",
+        "name": "McGhee",
+        "hero": "U.S. Army Cpl. Ryan C. McGhee",
+        "type": "Hero WOD",
+        "description": "AMRAP 30 minutes:\n5 Deadlifts (125/84 kg)\n13 Push-ups\n9 Box jumps (24/20 in)",
+        "stimulus": "Estamina constante, o perigo de um peso moderado em fatiga prolongada.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Deadlifts (125/84 kg)",
+                "reps": "5"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "13"
+            },
+            {
+                "name": "Box jumps (24/20 in)",
+                "reps": "9"
+            }
+        ],
+        "amrap": 30
+    },
+    {
+        "id": "kelly_brown",
+        "name": "Kelly Brown",
+        "hero": "CrossFit Kids Flowmaster Kelly Brown",
+        "type": "Tribute WOD",
+        "description": "5 rounds for time of:\nRow 440m\n10 Box jumps (30/24 in)\n10 Deadlifts (125/84 kg)\n10 Wall-ball shots (14/9 kg ball to 10/9 ft)",
+        "stimulus": "Pesos maiores que o convencional em movimentos conhecidos, alta intensidade.",
+        "isHero": false,
+        "workout": [
+            {
+                "name": "Row",
+                "reps": "440m"
+            },
+            {
+                "name": "Box jumps (30/24 in)",
+                "reps": "10"
+            },
+            {
+                "name": "Deadlifts (125/84 kg)",
+                "reps": "10"
+            },
+            {
+                "name": "Wall-ball shots (14/9 kg ball to 10/9 ft)",
+                "reps": "10"
+            }
+        ],
+        "rounds": 5
+    },
+    {
+        "id": "lorenzo",
+        "name": "Lorenzo",
+        "hero": "Level 2 Trainer Lorenzo Zanetti",
+        "type": "Tribute WOD",
+        "description": "For time:\nRun 1,000 meters\nThen, 5 rounds of:\n15 Push-ups\n20 Med-ball cleans (9/6 kg)\n21 Burpees\nThen:\nRun 1,000 meters",
+        "stimulus": "Muito condicionamento cardiopulmonar rodeado de resistência num core apertado.",
+        "isHero": false,
+        "workout": [
+            {
+                "name": "Run 1,000 meters",
+                "reps": "1x"
+            },
+            {
+                "name": "Then, 5 rounds of:",
+                "reps": "1x"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "15"
+            },
+            {
+                "name": "Med-ball cleans (9/6 kg)",
+                "reps": "20"
+            },
+            {
+                "name": "Burpees",
+                "reps": "21"
+            },
+            {
+                "name": "Then:",
+                "reps": "1x"
+            },
+            {
+                "name": "Run 1,000 meters",
+                "reps": "1x"
+            }
+        ]
+    },
+    {
+        "id": "diane",
+        "name": "Diane (Not Hero, Tribute Example)",
+        "hero": "Benchmark Tribute",
+        "type": "Tribute WOD",
+        "description": "21-15-9 reps for time:\nDeadlift (102/70 kg)\nHandstand push-ups",
+        "stimulus": "O clássico das raparigas (Benchmark) incluído para diversidade de tributes.",
+        "isHero": false,
+        "workout": [
+            {
+                "name": "Deadlift (102/70 kg)",
+                "reps": "1x"
+            },
+            {
+                "name": "Handstand push-ups",
+                "reps": "1x"
+            }
+        ]
+    },
+    {
+        "id": "coates",
+        "name": "Coates",
+        "hero": "U.S. Army Staff Sgt. Paul J. Coates",
+        "type": "Hero WOD",
+        "description": "5 rounds for time of:\n21 Deadlifts (61/43 kg)\n21 Pull-ups",
+        "stimulus": "Carga ultra leve e ginástica, devassa a cadeia posterior em massa.",
+        "isHero": true,
+        "workout": [
+            {
+                "name": "Deadlifts (61/43 kg)",
+                "reps": "21"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "21"
+            }
+        ],
+        "rounds": 5
+    }
+]

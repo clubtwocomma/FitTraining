@@ -1,0 +1,70 @@
+[
+  {
+    "id": "mmncixemnfi7w",
+    "name": "Built Gluteo e perna 11-03-2026",
+    "type": "built",
+    "source": "Built",
+    "rawText": "warmup\n3 a 5 minutos de cardio ligeiro*\n\n• 2 a 3 rondas de:\n\n• 10 air squats\n• 10 back squats (com barra ou halteres)\n• 10 deadlifts + 10 romanian deadlifts (barra ou halteres)\n• 10 hip thrusts (sem carga) + 10 hip thrusts (barra ou halteres)\n\nalternated step back lunge\n• 2 a 3 rondas de:\n\n• 30 segundos de alternated step back lunge\n• 20 monster walk (para a frente)\n• 20 monster walk (para trás)\n\n*Escolhe entre remo, airbike, skierg, caminhada rápida, corrida ligeira, subir e descer escadas, salto à corda ou jumping jacks. Podes combinar da maneira que preferires, desde que estejas 3 a 5 minutos em movimento para subir o batimento cardíaco.\n\n*Podes usar só barra ou halteres nos diferentes movimentos, ou podes subir as cargas de ronda para ronda, caso queiras.\n\nNOTA: Esta é apenas uma sugestão de um aquecimento geral ligeiro que poderás fazer antes de começares o teu treino. Podes fazer este ou outro aquecimento que queiras, conforme o tempo que tens disponível. Este aquecimento não te deverá demorar mais do que 10/15 minutos.\n\n\nsingle leg hip thrust\nA. 3 séries de:\n\n• 12 single leg hip thrust (perna direita)\n\n• 12 single leg hip thrust (perna esquerda)\n\n*90 segundos de descanso entre séries.\n\n*Tenta subir carga de série para série, sendo que a última série deve custar mesmo muito.\n\n*Regista a carga utilizada em cada série.\n\n\ndumbbell deficit reverse lunge\nB. 3 séries de:\n\n• 8 dumbbell deficit reverse lunge (perna direita)\n\n• 8 dumbbell deficit reverse lunge (perna esquerda)\n\n*90 segundos de descanso entre séries.\n\n*Tenta subir carga de série para série, sendo que a última série deve custar mesmo muito.\n\n*Regista a carga utilizada em cada série.\n\ndumbbell single leg romanian deadlift\nC. 3 séries de:\n\n• 12 dumbbell single leg romanian deadlift (perna direita)\n\n• 12 dumbbell single leg romanian deadlift (perna esquerda)\n\n*90 segundos de descanso entre séries.\n\n*Se tiveres um ponto de apoio onde te agarrares para estabilidade, melhor. Assim podes focar-te mais na ativação do glúteo e isquiotibial.\n\n*Tenta subir carga de série para série, sendo que a última série deve custar mesmo muito.\n\n*Regista a carga utilizada em cada série.\n\nseated leg curls\nD. 3 séries de:\n\n• 10 seated leg curls\n\n*90 segundos de descanso entre séries.\n\n*Podes fazer na máquina de leg curl, ou fazer sliding leg curl no chão, ou fazer no remo (vê o vídeo para as diferentes opções). Se fizeres estas opções, faz 12 repetições por série (lentas e controladas).\n\n*Tenta subir carga de série para série, sendo que a última série deve custar mesmo muito.\n\n*Regista a carga utilizada em cada série.\n\n\nshoulder and feet elevated hip thrust\nE. 3 séries de:\n\n• 20 shoulder and feet elevated hip thrust\n\n*60 segundos de descanso entre séries.\n\n*Joelhos sempre a fazer força na banda para fora.\n\n*Regista a banda utilizada.\n\n\nExtra\nF. Se tiveres tempo e quiseres:\n\n• 15 a 30 minutos de um exercício de cardio\n\n*Intensidade ligeiro a médio (sem impacto).\n\n*Escolhe entre caminhada rápida, bicicleta, elíptica, airbike, remo, skierg, passadeira.\n",
+    "exercises": [
+      {
+        "name": "a 5 minutos de cardio ligeiro*",
+        "sets": 1,
+        "reps": "3",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "A. 3 séries de:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "B. 3 séries de:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "C. 3 séries de:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "D. 3 séries de:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "E. 3 séries de:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "Extra",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      },
+      {
+        "name": "F. Se tiveres tempo e quiseres:",
+        "sets": 1,
+        "reps": "?",
+        "load": null,
+        "rest": null
+      }
+    ],
+    "structure": "3 Rounds",
+    "aiNotes": "Estrutura detetada: 3 Rounds. Tipo classificado como \"built\". 8 exercício(s) extraído(s) do texto original.",
+    "createdAt": "2026-03-12T10:49:42.046Z"
+  }
+]

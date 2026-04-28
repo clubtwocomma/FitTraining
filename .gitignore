@@ -1,0 +1,19 @@
+# node_modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# build
+dist/
+server/public/
+
+# environment
+.env
+
+# os
+.DS_Store
+
+# database
+postgres_data/
+server/prisma/dev.db
+server/prisma/dev.db-journal

@@ -1,0 +1,396 @@
+[
+    {
+        "id": "angie",
+        "name": "Angie",
+        "type": "Girl WOD",
+        "description": "For time:\n100 Pull-ups\n100 Push-ups\n100 Sit-ups\n100 Air Squats",
+        "workout": [
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "100"
+            },
+            {
+                "name": "Flexões (Push-ups)",
+                "reps": "100"
+            },
+            {
+                "name": "Abdominais (Sit-ups)",
+                "reps": "100"
+            },
+            {
+                "name": "Agachamentos (Air Squats)",
+                "reps": "100"
+            }
+        ],
+        "stimulus": "Resistência muscular pura com o peso do corpo."
+    },
+    {
+        "id": "barbara",
+        "name": "Barbara",
+        "type": "Girl WOD",
+        "description": "5 Rounds for time:\n20 Pull-ups\n30 Push-ups\n40 Sit-ups\n50 Air Squats\nRest exactly 3 minutes between rounds",
+        "rounds": 5,
+        "stimulus": "Sprints de ginástica intercalados com recuperação calculada."
+    },
+    {
+        "id": "chelsea",
+        "name": "Chelsea",
+        "type": "Girl WOD",
+        "description": "EMOM 30 minutes:\n5 Pull-ups\n10 Push-ups\n15 Air Squats",
+        "amrap": 30,
+        "stimulus": "Capacidade de trabalho contínuo sob a pressão do relógio."
+    },
+    {
+        "id": "diane",
+        "name": "Diane",
+        "type": "Girl WOD",
+        "description": "21-15-9 reps for time:\nDeadlift (102/70 kg)\nHandstand push-ups",
+        "workout": [
+            {
+                "name": "Peso Morto (Deadlift)",
+                "reps": "21-15-9",
+                "weight_h": "102kg",
+                "weight_m": "70kg"
+            },
+            {
+                "name": "Handstand Push-ups",
+                "reps": "21-15-9"
+            }
+        ],
+        "stimulus": "Taxativo para a cadeia posterior e fadiga extrema de ombros."
+    },
+    {
+        "id": "elizabeth",
+        "name": "Elizabeth",
+        "type": "Girl WOD",
+        "description": "21-15-9 reps for time:\nClean (61/43 kg)\nRing Dips",
+        "workout": [
+            {
+                "name": "Clean",
+                "reps": "21-15-9",
+                "weight_h": "61kg",
+                "weight_m": "43kg"
+            },
+            {
+                "name": "Ring Dips",
+                "reps": "21-15-9"
+            }
+        ],
+        "stimulus": "Potência pura misturada com força estrita."
+    },
+    {
+        "id": "fran",
+        "name": "Fran",
+        "type": "Girl WOD",
+        "description": "21-15-9 reps for time:\nThrusters (43/29 kg)\nPull-ups",
+        "workout": [
+            {
+                "name": "Thrusters",
+                "reps": "21-15-9",
+                "weight_h": "43kg",
+                "weight_m": "29kg"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "21-15-9"
+            }
+        ],
+        "stimulus": "O clássico do CrossFit. Muito rápido. Queima de pulmões brutal."
+    },
+    {
+        "id": "grace",
+        "name": "Grace",
+        "type": "Girl WOD",
+        "description": "For time:\n30 Clean and Jerks (61/43 kg)",
+        "workout": [
+            {
+                "name": "Clean and Jerk",
+                "reps": "30",
+                "weight_h": "61kg",
+                "weight_m": "43kg"
+            }
+        ],
+        "stimulus": "Ciclo rápido de barra pesada-moderada."
+    },
+    {
+        "id": "helen",
+        "name": "Helen",
+        "type": "Girl WOD",
+        "description": "3 Rounds for time:\nRun 400m\n21 Kettlebell Swings (1.5/1 pood)\n12 Pull-ups",
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "400m"
+            },
+            {
+                "name": "Kettlebell Swings",
+                "reps": "21",
+                "weight_h": "24kg",
+                "weight_m": "16kg"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "12"
+            }
+        ],
+        "rounds": 3,
+        "stimulus": "Endurance contínua sem quebra no ritmo cardiorrespiratório."
+    },
+    {
+        "id": "isabel",
+        "name": "Isabel",
+        "type": "Girl WOD",
+        "description": "For time:\n30 Snatches (61/43 kg)",
+        "workout": [
+            {
+                "name": "Snatch",
+                "reps": "30",
+                "weight_h": "61kg",
+                "weight_m": "43kg"
+            }
+        ],
+        "stimulus": "Como a Grace, mas mais exigente a nível técnico de ombros."
+    },
+    {
+        "id": "jackie",
+        "name": "Jackie",
+        "type": "Girl WOD",
+        "description": "For time:\nRow 1000m\n50 Thrusters (20/16 kg)\n30 Pull-ups",
+        "workout": [
+            {
+                "name": "Remo",
+                "reps": "1000m"
+            },
+            {
+                "name": "Thrusters",
+                "reps": "50",
+                "weight_h": "20kg",
+                "weight_m": "15kg"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "30"
+            }
+        ],
+        "stimulus": "Sprint longo. Barra muito leve, foco total na velocidade contínua."
+    },
+    {
+        "id": "karen",
+        "name": "Karen",
+        "type": "Girl WOD",
+        "description": "For time:\n150 Wall-ball shots (9/6 kg)",
+        "workout": [
+            {
+                "name": "Wall-ball shots",
+                "reps": "150",
+                "weight_h": "9kg",
+                "weight_m": "6kg"
+            }
+        ],
+        "stimulus": "Pernas e ombros em chamas num único movimento."
+    },
+    {
+        "id": "linda",
+        "name": "Linda",
+        "type": "Girl WOD",
+        "description": "10-9-8-7-6-5-4-3-2-1 reps for time:\nDeadlift (1.5x bodyweight)\nBench press (bodyweight)\nClean (0.75x bodyweight)",
+        "workout": [
+            {
+                "name": "Peso Morto (Deadlift)",
+                "reps": "10 to 1",
+                "weight_h": "1.5x PC",
+                "weight_m": "1.5x PC"
+            },
+            {
+                "name": "Bench Press",
+                "reps": "10 to 1",
+                "weight_h": "1x PC",
+                "weight_m": "1x PC"
+            },
+            {
+                "name": "Clean",
+                "reps": "10 to 1",
+                "weight_h": "0.75x PC",
+                "weight_m": "0.75x PC"
+            }
+        ],
+        "stimulus": "As '3 Barras da Morte'. Força pura e transição ríspida."
+    },
+    {
+        "id": "mary",
+        "name": "Mary",
+        "type": "Girl WOD",
+        "description": "AMRAP 20 minutes:\n5 Handstand push-ups\n10 1-legged squats (Pistols)\n15 Pull-ups",
+        "amrap": 20,
+        "workout": [
+            {
+                "name": "Handstand Push-ups",
+                "reps": "5"
+            },
+            {
+                "name": "Pistol Squats",
+                "reps": "10"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "15"
+            }
+        ],
+        "stimulus": "Ginástica de elite avançada."
+    },
+    {
+        "id": "nancy",
+        "name": "Nancy",
+        "type": "Girl WOD",
+        "description": "5 Rounds for time:\nRun 400m\n15 Overhead squats (43/29 kg)",
+        "rounds": 5,
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "400m"
+            },
+            {
+                "name": "Overhead Squat",
+                "reps": "15",
+                "weight_h": "43kg",
+                "weight_m": "29kg"
+            }
+        ],
+        "stimulus": "Estabilidade do core extrema quando fatigado pela corrida."
+    },
+    {
+        "id": "annie",
+        "name": "Annie",
+        "type": "Girl WOD",
+        "description": "50-40-30-20-10 reps for time:\nDouble-unders\nSit-ups",
+        "workout": [
+            {
+                "name": "Double-unders",
+                "reps": "50-40-30-20-10"
+            },
+            {
+                "name": "Abdominais (Sit-ups)",
+                "reps": "50-40-30-20-10"
+            }
+        ],
+        "stimulus": "Core e gémeos sob velocidade insana."
+    },
+    {
+        "id": "eva",
+        "name": "Eva",
+        "type": "Girl WOD",
+        "description": "5 Rounds for time:\nRun 800m\n30 Kettlebell swings (2/1.5 pood)\n30 Pull-ups",
+        "rounds": 5,
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "800m"
+            },
+            {
+                "name": "Kettlebell Swings",
+                "reps": "30",
+                "weight_h": "32kg",
+                "weight_m": "24kg"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "30"
+            }
+        ],
+        "stimulus": "Endurance e calos nas mãos destruídos. Helen no nível seguinte."
+    },
+    {
+        "id": "kelly",
+        "name": "Kelly",
+        "type": "Girl WOD",
+        "description": "5 Rounds for time:\nRun 400m\n30 Box jumps (24/20 in)\n30 Wall-ball shots (9/6 kg)",
+        "rounds": 5,
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "400m"
+            },
+            {
+                "name": "Box Jumps",
+                "reps": "30",
+                "weight_h": "24in",
+                "weight_m": "20in"
+            },
+            {
+                "name": "Wall-ball shots",
+                "reps": "30",
+                "weight_h": "9kg",
+                "weight_m": "6kg"
+            }
+        ],
+        "stimulus": "Tudo focado nas pernas."
+    },
+    {
+        "id": "lynne",
+        "name": "Lynne",
+        "type": "Girl WOD",
+        "description": "5 Rounds for max reps:\nBench press (bodyweight)\nPull-ups",
+        "rounds": 5,
+        "workout": [
+            {
+                "name": "Bench press",
+                "reps": "Max"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "Max"
+            }
+        ],
+        "stimulus": "Força máxima superior."
+    },
+    {
+        "id": "nicole",
+        "name": "Nicole",
+        "type": "Girl WOD",
+        "description": "AMRAP 20 minutes:\nRun 400m\nMax rep Pull-ups",
+        "amrap": 20,
+        "workout": [
+            {
+                "name": "Corrida",
+                "reps": "400m"
+            },
+            {
+                "name": "Elevações (Pull-ups)",
+                "reps": "Max"
+            }
+        ],
+        "stimulus": "Quebra garantida das costas mantendo a frequência cardíaca elevada."
+    },
+    {
+        "id": "amanda",
+        "name": "Amanda",
+        "type": "Girl WOD",
+        "description": "9-7-5 reps for time:\nMuscle-ups\nSquat Snatches (61/43 kg)",
+        "workout": [
+            {
+                "name": "Muscle-ups",
+                "reps": "9-7-5"
+            },
+            {
+                "name": "Squat Snatch",
+                "reps": "9-7-5",
+                "weight_h": "61kg",
+                "weight_m": "43kg"
+            }
+        ],
+        "stimulus": "Avançado e técnico, velocidade e habilidade absoluta."
+    },
+    {
+        "id": "gwen",
+        "name": "Gwen",
+        "type": "Girl WOD",
+        "description": "15-12-9 reps for time:\nClean and Jerks (Unbroken)\n*Rest as needed between sets.",
+        "workout": [
+            {
+                "name": "Clean and Jerk",
+                "reps": "15-12-9"
+            }
+        ],
+        "stimulus": "A força mental de não largar a barra (Unbroken)."
+    }
+]

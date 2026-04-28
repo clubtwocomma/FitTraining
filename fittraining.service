@@ -1,0 +1,14 @@
+[Unit]
+Description=FitTraining API + frontend
+After=network.target
+
+[Service]
+User=rjafreitas
+WorkingDirectory=/home/rjafreitas/MoatBot/workspace/FitTraining/server
+Environment=NODE_ENV=production
+Environment=PORT=8510
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

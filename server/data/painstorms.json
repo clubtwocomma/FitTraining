@@ -1,0 +1,583 @@
+[
+    {
+        "id": "painstorm-i",
+        "name": "Painstorm I",
+        "type": "Painstorm",
+        "description": "For Time; 3 Rounds of:; 400 meter Run; 21 Kettlebell Swings (1.5/1 pood); 12 Pull-Ups; Directly into:; 10 Pull-Ups; 10 Kettlebell Swings (1.5/1 pood); 15 Push-Ups; 200 meter Run; 20 Pull-Ups; 20 Kettlebell Swings (1.5/1 pood); 30 Push-Ups; 400 meter Run; 40 Pull-Ups; 40 Kettlebell Swings (1.5/1 pood); 60 Push-Ups; 800 meter Run; Finally, AMRAP in 10 minutes:; Single-Arm Kettlebell Snatches (1.5/1 pood)",
+        "stimulus": "Classic Chipper/AMRAP Hybrid",
+        "workout": [
+            {
+                "name": "400m Run / 21 KB Swings / 12 Pull-ups",
+                "reps": "3 Rounds"
+            },
+            {
+                "name": "10 Pull-ups / 10 KB Swings / 15 Push-ups / 200m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "20 Pull-ups / 20 KB Swings / 30 Push-ups / 400m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "40 Pull-ups / 40 KB Swings / 60 Push-ups / 800m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "Single-Arm KB Snatches",
+                "reps": "AMRAP 10min"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-ii",
+        "name": "Painstorm II",
+        "type": "Painstorm",
+        "description": "For Time; 5 Rounds of:; 10 Cleans (60/40 kg); 15 Push-Ups; Directly into:; 400 meter Run; 20 Barbell A Complexes (95/65 lb)*; 30 Pull-Ups; 400 meter Run; 30 Box Jumps (24/20 in); 30 Thrusters (45/35 lb); 400 meter Run; 20 Barbell B Complexes (45/35 lb)**; 30 Ball Slams (20/14 lb); 400 meter Run; 30 Kettlebell Swings (50/30 lb); 50 Push-Ups; *Barbell A Complex: 1 Hang Squat Clean, 1 Right Leg Front Rack Lunge, 1 Left Leg Front Rack Lunge, and 1 Split Jerk; **Barbell B Complex: 1 Hang Snatch, 1 Right Leg Overhead Lunge, 1 Left Leg Overhead Lunge",
+        "stimulus": "Barbell & Endurance Grind",
+        "workout": [
+            {
+                "name": "10 Cleans (60/40kg) / 15 Push-ups",
+                "reps": "5 Rounds"
+            },
+            {
+                "name": "400m Run + 20 Barbell A Complexes",
+                "reps": "1x"
+            },
+            {
+                "name": "30 Pull-ups + 400m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "30 Box Jumps / 30 Thrusters + 400m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "20 Barbell B Complexes / 30 Ball Slams + 400m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "30 KB Swings / 50 Push-ups",
+                "reps": "Finish"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-iii",
+        "name": "Painstorm III",
+        "type": "Painstorm",
+        "description": "For Time; 76 Sit-Up+Clean-and-Jerk Complexes; 76 Wall Ball Shots; 76 Box Jumps; 76 Pull-Ups; 76 Kettlebell Swings; 76 Burpees; 76 Kness-to-Elbows; 76 Push-Ups; 76 Air Squats; 76 Turkish Get-Up+Right Leg Lunge+Left Leg Lunge Complexes",
+        "stimulus": "High Volume Grinder",
+        "workout": [
+            {
+                "name": "Sit-Up + Clean-and-Jerk Complexes",
+                "reps": "76"
+            },
+            {
+                "name": "Wall Ball / Box Jump / Pull-ups",
+                "reps": "76 Each"
+            },
+            {
+                "name": "KB Swings / Burpees / K2E",
+                "reps": "76 Each"
+            },
+            {
+                "name": "Push-ups / Air Squats",
+                "reps": "76 Each"
+            },
+            {
+                "name": "TGU + Lunge Complex",
+                "reps": "76"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-iv",
+        "name": "Painstorm IV",
+        "type": "Painstorm",
+        "description": "For Time (in a team of 4); 50 Body Builders (each); 50 yard Forward Rolls; 25 Buddy Squats; 50 yard Inspect the House; 50 Assisted Pull-Ups (each); 50 yard Fireman's Carry; 50 V-Ups; 50 yard Buddy Drag; 25 Ankle Hooks (each); 50 yard Team Cadence Lunges; 25 Fire Team Push-Ups; 50 yard Buddy low Crawl; 1 mile Weighted Run (50/30 kg)",
+        "stimulus": "Team Mental Toughness",
+        "workout": [
+            {
+                "name": "Body Builders / Forward Rolls",
+                "reps": "50 / 50y"
+            },
+            {
+                "name": "Buddy Squats / Inspect the House",
+                "reps": "25 / 50y"
+            },
+            {
+                "name": "Assisted Pull-ups / Fireman's Carry",
+                "reps": "50 / 50y"
+            },
+            {
+                "name": "V-Ups / Buddy Drag / Ankle Hooks",
+                "reps": "50 / 50y / 25"
+            },
+            {
+                "name": "Team Cadence Lunges / Fire Team Push-ups",
+                "reps": "50y / 25"
+            },
+            {
+                "name": "Buddy Low Crawl / 1 mile Weighted Run",
+                "reps": "50y / 1mi"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-v",
+        "name": "Painstorm V",
+        "type": "Painstorm",
+        "description": "For Time; 15 Bear Complexes (45/35 kg)*; 30 Pull-Ups; 60 Push-Ups; 400 meter Run; Every 45 seconds, starting at 0:00, perform:; 45 second Dumbbell Hold (2x25/15 kg); *1 Bear Complex: 1 Power Clean, 1 Front Squat, 1 Push Press, 1 Back Squat, and 1 Push Press",
+        "stimulus": "Bear Complex & Grip",
+        "workout": [
+            {
+                "name": "Bear Complexes (45/35kg)",
+                "reps": "15"
+            },
+            {
+                "name": "Pull-ups",
+                "reps": "30"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "60"
+            },
+            {
+                "name": "400m Run",
+                "reps": "1x"
+            },
+            {
+                "name": "45s Dumbbell Hold (2x25/15kg)",
+                "reps": "E45s"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-vii",
+        "name": "Painstorm VII",
+        "type": "Painstorm",
+        "description": "For Time; 50-40-30-20-10 Air Squats; 45-35-25-15-5 Push-Ups; 400 meter Run; 40-32-24-16-8 Left-Arm Dumbbell Snatches (50/35 lb); 36-28-20-12-4 Right-Arm Dumbbell Snatches (50/35 lb); 400 meter Run; 30-24-18-12-6 Box Jumps (24/20 in); 27-21-15-9-3 Pull-Ups; 400 meter Run; 20-16-12-8-4 Dumbbell Burpee Hang Squat Clean Thrusters (50/35 lb); 18-14-10-6-2 Ring Dips; 400 meter Run; 10-8-6-4-2 Handstand Push-Ups; 9-7-5-3-1 Pistols (L+R=1); 400 meter Run",
+        "stimulus": "Metabolic Pyramid",
+        "workout": [
+            {
+                "name": "Air Squats / Push-Ups / 400m",
+                "reps": "50..10 / 45..5"
+            },
+            {
+                "name": "DB Snatches (L/R) / 400m",
+                "reps": "40..8 / 36..4"
+            },
+            {
+                "name": "Box Jumps / Pull-Ups / 400m",
+                "reps": "30..6 / 27..3"
+            },
+            {
+                "name": "DB Burpee Clean Thrusters / Dips / 400m",
+                "reps": "20..4 / 18..2"
+            },
+            {
+                "name": "HSPU / Pistols / 400m",
+                "reps": "10..2 / 9..1"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xi",
+        "name": "Painstorm XI",
+        "type": "Painstorm",
+        "description": "For Time; 100 meter Run; 10 Muscle-Ups; 200 meter Run; 20 Handstand Push-Ups; 300 meter Run; 30 Overhead Squats (45/35 lb bar); 400 meter Run; 40 Sumo Deadlift High Pull (45/35 lb bar); 500 meter Run; 50 Pull-Ups; 600 meter Run; 60 Push-Ups; 700 meter Run; 70 Kettlebell Swings (1/.75 pood); 800 meter Run; 80 Burpees; 900 meter Run; 90 Thrusters (45/35 lb bar); 1,000 meter Run; 100 Air Squats",
+        "stimulus": "Increasing Distance & Skills",
+        "workout": [
+            {
+                "name": "100m / 10 Muscle-ups",
+                "reps": "1x"
+            },
+            {
+                "name": "200m / 20 HSPU",
+                "reps": "1x"
+            },
+            {
+                "name": "300m / 30 OHS",
+                "reps": "1x"
+            },
+            {
+                "name": "400m / 40 SDHP",
+                "reps": "1x"
+            },
+            {
+                "name": "500m / 50 Pull-ups",
+                "reps": "1x"
+            },
+            {
+                "name": "600m / 60 Push-ups",
+                "reps": "1x"
+            },
+            {
+                "name": "700m / 70 KB Swings",
+                "reps": "1x"
+            },
+            {
+                "name": "800m / 80 Burpees",
+                "reps": "1x"
+            },
+            {
+                "name": "900m / 90 Thrusters",
+                "reps": "1x"
+            },
+            {
+                "name": "1000m / 100 Air Squats",
+                "reps": "Final"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xii",
+        "name": "Painstorm XII",
+        "type": "Painstorm",
+        "description": "For Time; 400 meter Run; 50 Back Squats; 50 Front Squats; 50 Overhead Squats; 400 meter Run; 50 Shoulder Presses; 50 Push Presses; 50 Push Jerks; 400 meter Run; 50 Hang Power Cleans; 50 Hang Power Snatches; 400 meter Run; Perform all barbell movements with an olympic bar only (45/35 lb). Run without the bar.",
+        "stimulus": "Barbell Capacity",
+        "workout": [
+            {
+                "name": "400m / 50 Back / Front / OH Squats",
+                "reps": "Complex"
+            },
+            {
+                "name": "400m / 50 Press / Push Press / Jerk",
+                "reps": "Complex"
+            },
+            {
+                "name": "400m / 50 Hang Power Cleans / Snatches",
+                "reps": "Complex"
+            },
+            {
+                "name": "400m Run",
+                "reps": "Finish"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xiv",
+        "name": "Painstorm XIV",
+        "type": "Painstorm",
+        "description": "For Time; 800 meter Run; 50 Box Jumps (24/20 in); 400 meter Run; 25 Push Presses (95/65 lb); 200 meter Run; 12 Handstand Push-Ups; 400 meter Run; 25 Pull-Ups; 800 meter Run; 50 Beck's Burpees; 400 meter Run; 25 Kettlebell Swings (24/16 kg); 200 meter Run; 12 Thrusters (95/65 lb); 400 meter Run; 25 Power Cleans (95/65 lb); 800 meter Run; 50 Power Snatches (95/65 lb)",
+        "stimulus": "Varied Endurance",
+        "workout": [
+            {
+                "name": "800m Run / 50 Box Jumps / 400m Run",
+                "reps": "Set 1"
+            },
+            {
+                "name": "25 Push Press / 200m Run / 12 HSPU",
+                "reps": "Set 2"
+            },
+            {
+                "name": "400m Run / 25 Pull-Ups",
+                "reps": "Set 3"
+            },
+            {
+                "name": "800m Run / 50 Beck's Burpees",
+                "reps": "Set 4"
+            },
+            {
+                "name": "400m Run / 25 KB Swings / 200m Run / 12 Thrusters",
+                "reps": "Set 5"
+            },
+            {
+                "name": "400m Run / 25 Cleans / 800m Run / 50 Snatches",
+                "reps": "Final"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xv",
+        "name": "Painstorm XV",
+        "type": "Painstorm",
+        "description": "7 Rounds for Time; 10 Man Makers; 20 Dumbbell Deadlifts; 30 Single-Arm Dumbbell Snatches (15 per side); 40 Single-Arm Overhead Lunges (20 per side); 50 Dumbbell Swings; Use one pair of dumbbells throughout (pick your own weight)",
+        "stimulus": "Dumbbell Hell",
+        "workout": [
+            {
+                "name": "Man Makers",
+                "reps": "10"
+            },
+            {
+                "name": "Dumbbell Deadlifts",
+                "reps": "20"
+            },
+            {
+                "name": "Single-Arm DB Snatches",
+                "reps": "30"
+            },
+            {
+                "name": "Single-Arm OH Lunges",
+                "reps": "40"
+            },
+            {
+                "name": "Dumbbell Swings",
+                "reps": "50"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xviii",
+        "name": "Painstorm XVIII",
+        "type": "Painstorm",
+        "description": "For Time; 10 Alternating Turkish Get-Ups (16/12 kg); 50 Kettlebell Sumo Deadlift High-Pulls (16/12 kg); 50 Kettlebell Cleans (25 each hand); 50 Kettlebell Jerks (25 each hand); 100 meter Kettlebell Waiter Walk; 50 Kettlebell Figure 8 through Legs; 50 American Kettlebell Swings; 50 Kettlebell Deadlifts; 100 meter Kettlebell Broad Jumps; 50 Kettlebell Sit-Ups; 50 Left-Hand American KB Swings; 50 KB Goblet Squats; 100 meter KB Lunges; 50 KB Bent Over Rows; 50 Right-Hand American KB Swings; 50 KB Snatches; Max Kettlebell Plank",
+        "stimulus": "Kettlebell Specialization",
+        "workout": [
+            {
+                "name": "TGU (10) / SDHP / Cleans / Jerks",
+                "reps": "50 Each"
+            },
+            {
+                "name": "100m Waiter Walk / Figure 8s / Swings",
+                "reps": "50 Each"
+            },
+            {
+                "name": "100m Broad Jump / Sit-ups / Goblet Squats",
+                "reps": "50 Each"
+            },
+            {
+                "name": "100m Lunges / Rows / Snatches",
+                "reps": "50 Each"
+            },
+            {
+                "name": "Max KB Plank",
+                "reps": "Final"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xix",
+        "name": "Painstorm XIX",
+        "type": "Painstorm",
+        "description": "AMRAP in 40 minutes; 5 Deadlifts (70/50 lb); 5 Hang Power Cleans (70/50 lb); 5 Front Squats (70/50 lb); 5 Push Presses (70/50 lb); 5 Back Squats (70/50 lb)",
+        "stimulus": "Steady State Grinder",
+        "workout": [
+            {
+                "name": "Deadlift / Hang Power Clean",
+                "reps": "5/5"
+            },
+            {
+                "name": "Front Squat / Push Press",
+                "reps": "5/5"
+            },
+            {
+                "name": "Back Squat",
+                "reps": "5"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xx",
+        "name": "Painstorm XX",
+        "type": "Painstorm",
+        "description": "AMRAP in 47 minutes; 1 min Handstand Push-Ups, Muscle-Ups, Air Squats, Sit-Ups, Pull-Ups. 1 min Rest. 1 min KB Swings, Left Snatch, Lunge, Right Snatch, Goblet Squat. 1 min Rest. 1 min Push Press, SDHP, Split Jerk, Power Clean, Thruster. 1 min Rest. 1 min Burpees, 10m Sprints, Pull-Ups, Shoulder Press, Calorie Row. 1 min Rest. Total 2 Rounds.",
+        "stimulus": "Kitchen Sink Conditioning",
+        "workout": [
+            {
+                "name": "HSPU / Muscle-up / Squat / Sit-up / Pull-up",
+                "reps": "1 min ea"
+            },
+            {
+                "name": "KB Swings / Snatch / Lunge / Goblet Squat",
+                "reps": "1 min ea"
+            },
+            {
+                "name": "Press / SDHP / Jerk / Clean / Thruster",
+                "reps": "1 min ea"
+            },
+            {
+                "name": "Burpees / Sprints / Row",
+                "reps": "1 min ea"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxi",
+        "name": "Painstorm XXI",
+        "type": "Painstorm",
+        "description": "For time; 30 Burpees; 30 Deadlifts (50/35 lb); 30 Burpees; 30 Cleans; 30 Burpees; 30 Single-Arm Strict Presses; 30 Burpees; 30 Push Presses; 30 Burpees; 30 Push Jerks; 30 Burpees; 30 Dumbbell Swings; 30 Burpees; 30 Sumo DL HIgh-Pulls; 30 Burpees; 30 Snatches (Left); 30 Burpees; 30 Snatches (Right); 30 Burpees; 30 Man Makers",
+        "stimulus": "Burpee Pacing",
+        "workout": [
+            {
+                "name": "Burpees (30) then Deadlifts",
+                "reps": "30"
+            },
+            {
+                "name": "Burpees (30) then Cleans",
+                "reps": "30"
+            },
+            {
+                "name": "Burpees (30) then Presses",
+                "reps": "30"
+            },
+            {
+                "name": "Burpees (30) then Swings",
+                "reps": "30"
+            },
+            {
+                "name": "Burpees (30) then Man Makers",
+                "reps": "30"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxiv",
+        "name": "Painstorm XXIV",
+        "type": "Painstorm",
+        "description": "For Time; 100 meter Run; 50 Burpees; 200 meter Run; 100 Push-Ups; 300 meter Run; 150 Lunges; 400 meter Run; 200 Air Squats; 300 meter Run; 150 Lunges; 200 meter Run; 100 Push-Ups; 100 meter Run; 50 Burpees",
+        "stimulus": "Lungs & Legs",
+        "workout": [
+            {
+                "name": "100m / 50 Burpees",
+                "reps": "Start"
+            },
+            {
+                "name": "200m / 100 Push-ups",
+                "reps": "1x"
+            },
+            {
+                "name": "300m / 150 Lunges",
+                "reps": "1x"
+            },
+            {
+                "name": "400m / 200 Squats",
+                "reps": "Peak"
+            },
+            {
+                "name": "300m / 150 Lunges",
+                "reps": "1x"
+            },
+            {
+                "name": "200m / 100 Push-ups",
+                "reps": "1x"
+            },
+            {
+                "name": "100m / 50 Burpees",
+                "reps": "Finish"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxv",
+        "name": "Painstorm XXV",
+        "type": "Painstorm",
+        "description": "For Time; 500 Thrusters (45/35 lb)",
+        "stimulus": "Mental Endurance",
+        "workout": [
+            {
+                "name": "Thrusters (45/35lb)",
+                "reps": "500"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxvi",
+        "name": "Painstorm XXVI",
+        "type": "Painstorm",
+        "description": "Eight Tabatas in 39 minutes; Tabata Thrusters (95/65 lb); 1 minute Rest; Tabata Pull-Ups; 1 minute Rest; Tabata Cleans (135/95 lb); 1 minute Rest; Tabata Ring Dips; 1 minute Rest; Tabata Deadlifts (200/150 lb); 1 minute Rest; Tabata Handstand Push-Ups; 1 minute Rest; Tabata Kettlebell Swings (1.5/1 pood); 1 minute Rest; Tabata Row",
+        "stimulus": "Interval Intensity",
+        "workout": [
+            {
+                "name": "Tabata Thrusters / Pull-ups / Cleans",
+                "reps": "8 Rounds ea"
+            },
+            {
+                "name": "Tabata Ring Dips / Deadlifts / HSPU",
+                "reps": "8 Rounds ea"
+            },
+            {
+                "name": "Tabata Kettlebell Swings / Row",
+                "reps": "8 Rounds ea"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxix",
+        "name": "Painstorm XXIX",
+        "type": "Painstorm",
+        "description": "For Time; 20-19-18-17-16-15-14-13-12-11-10-9-8-7-6-5-4-3-2-1 reps of:; Deadlifts (Bodyweight); Push-Ups; Dumbbell Cleans (1/2 Bodyweight)",
+        "stimulus": "Strength Endurance",
+        "workout": [
+            {
+                "name": "Deadlifts (Bodyweight)",
+                "reps": "20 to 1"
+            },
+            {
+                "name": "Push-ups",
+                "reps": "20 to 1"
+            },
+            {
+                "name": "DB Cleans (1/2 BW)",
+                "reps": "20 to 1"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxx",
+        "name": "Painstorm XXX",
+        "type": "Painstorm",
+        "description": "AMRAP in 40 minutes; 50 meter Bear Crawl; 7 Bear Complexes (95/65 lb); 1 Bear Complex consists of: 1 Power Clean, 1 Front Squat, 1 Push Press, 1 Back Squat, and 1 Push Press",
+        "stimulus": "Unilateral Bear Power",
+        "workout": [
+            {
+                "name": "Bear Crawl",
+                "reps": "50m"
+            },
+            {
+                "name": "Bear Complexes (95/65lb)",
+                "reps": "7"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xxxvii",
+        "name": "Painstorm XXXVII",
+        "type": "Painstorm",
+        "description": "For Time; 500 meter Row; 5 Barbell Complex (42.5/30 kg)*; 400 meter Row; 4 Barbell Complex (42.5/30 kg)*; 300 meter Row; 3 Barbell Complex (42.5/30 kg)*; 200 meter Row; 2 Barbell Complex (42.5/30 kg)*; 100 meter Row; 1 Barbell Complex (42.5/30 kg)*; *1 Barbell Complex: 5 Deadlifts, 5 Hang Power Cleans, 5 Front Squats, 5 Push Presses, 5 Back Squats",
+        "stimulus": "Aerobic/Anaerobic Power",
+        "workout": [
+            {
+                "name": "500m Row / 5 Complexes (42.5kg)",
+                "reps": "Round 1"
+            },
+            {
+                "name": "400m Row / 4 Complexes",
+                "reps": "Round 2"
+            },
+            {
+                "name": "300m Row / 3 Complexes",
+                "reps": "Round 3"
+            },
+            {
+                "name": "200m Row / 2 Complexes",
+                "reps": "Round 4"
+            },
+            {
+                "name": "100m Row / 1 Complex",
+                "reps": "Final"
+            }
+        ]
+    },
+    {
+        "id": "painstorm-xl",
+        "name": "Painstorm XL",
+        "type": "Painstorm",
+        "description": "5 Rounds for Time; 1,000 lb Accumulated Ground-to-Overheads (anyhow); 500 meter Row; Rest 3 minutes",
+        "stimulus": "Heavy Capacity",
+        "workout": [
+            {
+                "name": "Accumulate 1000lb GTOH",
+                "reps": "Anyhow"
+            },
+            {
+                "name": "500m Row",
+                "reps": "1x"
+            },
+            {
+                "name": "Rest",
+                "reps": "3 min"
+            }
+        ]
+    }
+]

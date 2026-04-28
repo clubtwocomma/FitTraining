@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN       // Global Admin
+  BOX_ADMIN   // Box Manager
+  COACH       // Box Coach
+  ATHLETE     // Regular User
+}
+
+model Box {
+  id          Int       @id @default(autoincrement())
+  name        String
+  location    String?
+  description String?
+  inviteCode  String    @unique // To allow athletes to join
+  adminId     Int       // The user who created/owns the box
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  classes     GymClass[]
+  wods        BoxWod[]
+
+  @@index([inviteCode])
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  password     String
+  name         String
+  role         Role      @default(ATHLETE)
+  profile      Json?     // Stores gender, level, equipment, etc.
+  boxId        Int?      // Nullable for "register without box"
+  boxValidated Boolean   @default(false) // Manager must validate athlete
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  box          Box?      @relation(fields: [boxId], references: [id])
+  bookings     Booking[]
+  results      Result[]
+  plans        UserPlan[]
+  customWorkouts CustomWorkout[]
+
+  @@index([boxId])
+  @@index([email])
+}
+
+model UserPlan {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  title     String
+  goal      String?
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  workouts  ScheduledWorkout[]
+}
+
+model ScheduledWorkout {
+  id        Int       @id @default(autoincrement())
+  planId    Int
+  day       Int       // Day number in the plan (1, 2, 3...)
+  date      DateTime? // Actual calendar date
+  focus     String
+  content   Json      // Exercises, sets, reps, etc.
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  plan      UserPlan  @relation(fields: [planId], references: [id])
+  results   Result[]
+}
+
+model BoxWod {
+  id        Int       @id @default(autoincrement())
+  boxId     Int
+  date      DateTime  @default(now())
+  title     String
+  content   Json      // Stores warmup, main, cooldown
+  stimulus  String?   
+  createdAt DateTime  @default(now())
+  
+  box       Box       @relation(fields: [boxId], references: [id])
+  results   Result[]
+
+  @@index([boxId, date])
+}
+
+// Global Benchmark WODs (Heroes, Girls, Painstorms)
+model GlobalWod {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique  // e.g. "fran", "murph", "painstorm-1"
+  name        String
+  wodType     String    // "girl" | "hero" | "painstorm"
+  description String
+  stimulus    String?
+  workout     Json      // Array de {name, reps, weight_h?, weight_m?, duration?}
+  rounds      Int?
+  amrap       Int?
+  honor       String?   // Para Hero WODs: nome da pessoa homenageada
+  createdAt   DateTime  @default(now())
+  results     Result[]
+
+  @@index([wodType])
+}
+
+// Custom Workouts per-user (previously a shared JSON file — bug fixed!)
+model CustomWorkout {
+  id        String   @id @default(cuid())
+  userId    Int
+  name      String
+  type      String   @default("outro")
+  source    String?
+  rawText   String
+  exercises Json
+  structure String?
+  aiNotes   String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model GymClass {
+  id        Int       @id @default(autoincrement())
+  boxId     Int
+  name      String?   // e.g., "WOD", "Open Box", "Pilates"
+  startTime DateTime
+  endTime   DateTime?
+  capacity  Int       @default(12)
+  createdAt DateTime  @default(now())
+
+  box       Box       @relation(fields: [boxId], references: [id])
+  bookings  Booking[]
+
+  @@index([boxId, startTime])
+}
+
+model Booking {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  classId      Int
+  status       String    @default("CONFIRMED") // CONFIRMED, CANCELLED
+  registeredAt DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id])
+  gymClass     GymClass  @relation(fields: [classId], references: [id])
+
+  @@index([userId, registeredAt])
+  @@index([classId])
+}
+
+model Result {
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  boxWodId           Int?              
+  globalWodId        Int?
+  scheduledWorkoutId Int?              
+  score              String            
+  type               String            // RX or Scaled
+  notes              String?           
+  createdAt          DateTime          @default(now())
+
+  user               User              @relation(fields: [userId], references: [id])
+  boxWod             BoxWod?           @relation(fields: [boxWodId], references: [id])
+  globalWod          GlobalWod?        @relation(fields: [globalWodId], references: [id])
+  scheduledWorkout   ScheduledWorkout? @relation(fields: [scheduledWorkoutId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([boxWodId])
+  @@index([globalWodId])
+}
+
+model Exercise {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  muscleGroups Json     
+  equipment    Json     
+  type         Json   
+  source       String?  
+  createdAt    DateTime @default(now())
+}
