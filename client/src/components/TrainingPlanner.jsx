@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Calendar, ClipboardList, Target, ChevronLeft, ChevronRight, Sparkles, Download, CheckCircle2 } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 
@@ -57,11 +57,48 @@ const QUESTIONS = [
         ]
     },
     {
+        id: 'session_duration',
+        text: 'Quanto tempo tens disponível por treino?',
+        type: 'number',
+        placeholder: 'Ex: 45',
+        subtitle: 'Insere o valor exato em minutos. Menos de 45 min irá otimizar o treino removendo o arrefecimento.'
+    },
+    {
         id: 'period',
-        text: 'Duração total do plano?',
+        text: 'Duração do plano?',
         options: [
-            { id: 'week', text: 'Semanal (7 dias)' },
-            { id: 'month', text: 'Mensal (30 dias)' }
+            { id: 'week', text: 'Semanal (7 dias - Recomendado para Precisão)' }
+        ]
+    },
+    {
+        id: 'energy',
+        text: 'Como te sentes hoje?',
+        subtitle: 'O Treinador usa isto para ajustar a intensidade desta semana.',
+        options: [
+            { id: 'fresco', text: '🔋 Fresco — Pronto para tudo' },
+            { id: 'normal', text: '😊 Normal — Bem disposto' },
+            { id: 'cansado', text: '😴 Cansado — Noite difícil' },
+            { id: 'muito cansado', text: '🪫 Muito Cansado — Preciso de recuperar' }
+        ]
+    },
+    {
+        id: 'sleep_hours',
+        text: 'Quantas horas dormiste?',
+        options: [
+            { id: '8', text: '8+ horas 💪' },
+            { id: '7', text: '7 horas 👍' },
+            { id: '6', text: '6 horas 😐' },
+            { id: '5', text: 'Menos de 5 horas 😓' }
+        ]
+    },
+    {
+        id: 'stress',
+        text: 'Nível de stress hoje?',
+        options: [
+            { id: 'baixo', text: '🟢 Baixo — Tranquilo' },
+            { id: 'normal', text: '🟡 Normal' },
+            { id: 'alto', text: '🟠 Alto — Dia pesado' },
+            { id: 'muito alto', text: '🔴 Muito Alto — Sobrecarregado' }
         ]
     },
     {
@@ -86,6 +123,18 @@ export default function TrainingPlanner({ onBack, profile }) {
     const [isGenerating, setIsGenerating] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [completedDays, setCompletedDays] = useState(new Set())
+
+    // Scroll to top when loading overlay appears (fixes mobile off-screen issue)
+    useEffect(() => {
+        if (isGenerating) {
+            window.scrollTo({ top: 0, behavior: 'instant' })
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = ''
+        }
+        return () => { document.body.style.overflow = '' }
+    }, [isGenerating])
 
     const handleNext = (val) => {
         const newAnswers = { ...answers, [QUESTIONS[step].id]: val }
@@ -97,6 +146,10 @@ export default function TrainingPlanner({ onBack, profile }) {
         }
     }
 
+    const handlePrevious = () => {
+        if (step > 0) setStep(step - 1)
+    }
+
     const resetPlanner = () => {
         setPlan(null)
         setStep(0)
@@ -105,6 +158,11 @@ export default function TrainingPlanner({ onBack, profile }) {
     }
 
     const savePlan = async () => {
+        if (!plan || !plan.sessions || plan.sessions.length === 0) {
+            alert("O plano parece estar vazio. Tenta gerar novamente.");
+            return;
+        }
+
         setIsSaving(true)
         try {
             const res = await apiFetch('plans', {
@@ -113,20 +171,27 @@ export default function TrainingPlanner({ onBack, profile }) {
                     title: plan.title,
                     goal: plan.goal || answers.goal,
                     sessions: plan.sessions,
-                    startDate: new Date().toISOString()
+                    startDate: new Date().toISOString(),
+                    coachingDecision: plan.coachingDecision
                 })
             });
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || `Erro do servidor (${res.status})`);
+                const msg = typeof errorData.error === 'string' ? errorData.error : 'Erro ao guardar plano';
+                throw new Error(msg);
             }
 
             setSaveSuccess(true);
             setTimeout(() => onBack(), 2000);
         } catch (err) {
             console.error('Erro ao salvar plano:', err);
-            alert(`Não foi possível guardar o plano: ${err.message}`);
+            // Se for um erro do Zod (string JSON), tenta limpar
+            let userMsg = err.message;
+            if (userMsg.includes('[{"')) {
+                userMsg = "Dados do plano inválidos. Por favor, gera o plano novamente.";
+            }
+            alert(`Não foi possível guardar o plano: ${userMsg}`);
         } finally {
             setIsSaving(false)
         }
@@ -160,39 +225,42 @@ export default function TrainingPlanner({ onBack, profile }) {
             {/* AI Loading Overlay */}
             {isGenerating && (
                 <div style={{
-                    position: 'fixed', inset: 0,
-                    background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(20px)',
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 9999, gap: '2rem', padding: '2rem', color: 'white'
+                    zIndex: 99999, gap: '1.5rem', padding: '2rem', color: 'white'
                 }}>
                     <div style={{
-                        width: '80px', height: '80px', borderRadius: '50%',
+                        width: '64px', height: '64px', borderRadius: '50%',
                         border: '4px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)',
-                        animation: 'spin 1s linear infinite'
+                        animation: 'spin 1s linear infinite', flexShrink: 0
                     }} />
-                    <div style={{ textAlign: 'center' }}>
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>🤖 Arquitetando a tua Evolução</h2>
-                        <p style={{ opacity: 0.8, fontSize: '1.1rem', maxWidth: '400px', margin: '1rem auto' }}>
-                            A nossa IA está a desenhar um plano de treino periodizado, ajustado à tua experiência e limitações.
+                    <div style={{ textAlign: 'center', maxWidth: '320px' }}>
+                        <h2 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.6rem)', fontWeight: 800, marginBottom: '0.75rem' }}>🤖 Arquitetando a tua Evolução</h2>
+                        <p style={{ opacity: 0.75, fontSize: 'clamp(0.85rem, 3vw, 1rem)', lineHeight: 1.5 }}>
+                            A IA está a desenhar o teu plano personalizado. Aguarda...
                         </p>
                     </div>
                 </div>
             )}
 
-            <button onClick={onBack} className="chip" style={{ marginBottom: '1.5rem' }}>
-                <ChevronLeft size={16} /> Voltar
+            <button onClick={() => !plan && step > 0 ? handlePrevious() : onBack()} className="chip" style={{ marginBottom: '1.5rem' }}>
+                <ChevronLeft size={16} /> {(!plan && step > 0) ? 'Pergunta Anterior' : 'Voltar'}
             </button>
 
             {!plan ? (
                 <div className="survey-container">
                     {/* Survey Header */}
-                    <header style={{ marginBottom: '3rem', textAlign: 'center' }}>
-                        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Plano de Elite</h1>
-                        <p style={{ fontSize: '1.1rem', opacity: 0.7 }}>Personalização profunda baseada em objetivos e limitações.</p>
+                    <header style={{ marginBottom: '2rem', textAlign: 'center' }}>
+                        <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem', fontWeight: 800 }}>Plano de Elite</h1>
+                        <p style={{ fontSize: '0.95rem', opacity: 0.7 }}>Personalização baseada em objetivos e limitações.</p>
                     </header>
 
-                    <div className="premium-card animate-slide-up" style={{ maxWidth: '700px', margin: '0 auto', background: 'white', padding: '3rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '2.5rem' }}>
+                    <div className="premium-card animate-slide-up" style={{ maxWidth: '600px', margin: '0 auto', background: 'white', padding: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '2rem' }}>
                             {QUESTIONS.map((_, i) => (
                                 <div key={i} style={{
                                     height: '4px',
@@ -204,33 +272,62 @@ export default function TrainingPlanner({ onBack, profile }) {
                             ))}
                         </div>
 
-                        <h2 style={{ fontSize: '2rem', marginBottom: '2.5rem', textAlign: 'center', fontWeight: 800 }}>{QUESTIONS[step].text}</h2>
+                        <h2 style={{ fontSize: '1.4rem', marginBottom: QUESTIONS[step].subtitle ? '0.5rem' : '2rem', textAlign: 'center', fontWeight: 800, color: 'var(--text-main)' }}>{QUESTIONS[step].text}</h2>
+                        {QUESTIONS[step].subtitle && (
+                            <p style={{ textAlign: 'center', opacity: 0.6, fontSize: '0.9rem', marginBottom: '1.5rem', fontStyle: 'normal' }}>
+                                {QUESTIONS[step].subtitle}
+                            </p>
+                        )}
 
                         {QUESTIONS[step].type === 'textarea' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <textarea
                                     className="input-textarea"
                                     placeholder={QUESTIONS[step].placeholder}
-                                    rows="5"
-                                    style={{ width: '100%', padding: '1.5rem', fontSize: '1.1rem' }}
+                                    rows="4"
+                                    style={{ width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: '0.75rem' }}
                                     onChange={(e) => setAnswers({ ...answers, [QUESTIONS[step].id]: e.target.value })}
                                     value={answers[QUESTIONS[step].id] || ''}
                                 />
-                                <button className="btn btn-primary" style={{ height: '64px', fontSize: '1.1rem' }} onClick={() => handleNext(answers[QUESTIONS[step].id] || 'Nenhuma')}>
-                                    Concluir e Gerar Plano <Sparkles size={20} />
+                                <button className="btn btn-primary" style={{ padding: '1rem', fontSize: '1rem', fontWeight: 600 }} onClick={() => handleNext(answers[QUESTIONS[step].id] || 'Nenhuma')}>
+                                    {step === QUESTIONS.length - 1 ? (
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>Concluir e Gerar Plano <Sparkles size={18} /></span>
+                                    ) : (
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>Avançar <ChevronRight size={18} /></span>
+                                    )}
+                                </button>
+                            </div>
+                        ) : QUESTIONS[step].type === 'number' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <input
+                                    type="number"
+                                    className="input-textarea"
+                                    placeholder={QUESTIONS[step].placeholder}
+                                    style={{ width: '100%', padding: '1.25rem', fontSize: '1.25rem', textAlign: 'center', borderRadius: '0.75rem', border: '2px solid var(--surface-color)', transition: 'border-color 0.2s ease' }}
+                                    onChange={(e) => setAnswers({ ...answers, [QUESTIONS[step].id]: e.target.value })}
+                                    value={answers[QUESTIONS[step].id] || ''}
+                                    autoFocus
+                                />
+                                <button 
+                                    className="btn btn-primary" 
+                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
+                                    onClick={() => handleNext(answers[QUESTIONS[step].id] || '60')}
+                                    disabled={!answers[QUESTIONS[step].id]}
+                                >
+                                    Avançar <ChevronRight size={18} />
                                 </button>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
                                 {QUESTIONS[step].options.map(opt => (
                                     <button
                                         key={opt.id}
                                         className="btn btn-outline"
-                                        style={{ height: 'auto', padding: '1.5rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.1rem' }}
+                                        style={{ height: 'auto', padding: '1rem 1.25rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', borderRadius: '0.75rem' }}
                                         onClick={() => handleNext(opt.id)}
                                     >
-                                        <span style={{ fontWeight: 700 }}>{opt.text}</span>
-                                        <ChevronRight size={20} opacity={0.3} />
+                                        <span style={{ fontWeight: 600 }}>{opt.text}</span>
+                                        <ChevronRight size={18} opacity={0.3} />
                                     </button>
                                 ))}
                             </div>
@@ -276,6 +373,26 @@ export default function TrainingPlanner({ onBack, profile }) {
                         </div>
                     </div>
 
+                    {/* Coach Insights (Phase 2) */}
+                    {plan.coachingDecision?.coach_insight && (
+                        <div className="premium-card animate-slide-up no-print" style={{
+                            marginBottom: '3rem',
+                            padding: '2rem',
+                            background: 'var(--surface-color)',
+                            borderLeft: '4px solid var(--primary-color)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                                <div style={{ background: 'var(--primary-color)', color: 'white', padding: '8px', borderRadius: '50%' }}>
+                                    <Sparkles size={20} />
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Feedback do Teu Treinador</h3>
+                            </div>
+                            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: 0, opacity: 0.9, fontStyle: 'italic' }}>
+                                "{plan.coachingDecision.coach_insight}"
+                            </p>
+                        </div>
+                    )}
+
                     {selectedSession ? (
                         <div className="session-details animate-slide-up no-print">
                             <button onClick={() => setSelectedSession(null)} className="chip" style={{ marginBottom: '2rem' }}>
@@ -284,18 +401,32 @@ export default function TrainingPlanner({ onBack, profile }) {
 
                             <div className="premium-card" style={{ padding: '3rem', background: 'white' }}>
                                 <header style={{ marginBottom: '2.5rem', borderBottom: '1px solid var(--surface-color)', paddingBottom: '2rem' }}>
-                                    <div style={{ color: 'var(--primary-color)', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Dia {selectedSession.day}</div>
-                                    <h2 style={{ fontSize: '2.5rem', margin: 0 }}>{selectedSession.focus}</h2>
-                                    <p style={{ fontSize: '1.1rem', opacity: 0.6, marginTop: '0.5rem' }}>Duração Estimada: {selectedSession.duration}</p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div>
+                                            <div style={{ color: 'var(--primary-color)', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Dia {selectedSession.day}</div>
+                                            <h2 style={{ fontSize: '2.5rem', margin: 0 }}>{selectedSession.focus}</h2>
+                                            <p style={{ fontSize: '1.1rem', opacity: 0.6, marginTop: '0.5rem' }}>Duração Estimada: {selectedSession.duration}</p>
+                                        </div>
+                                        {selectedSession.exercises?.length > 0 && (
+                                            <div style={{ opacity: 0.5, fontSize: '0.85rem', fontWeight: 600, fontStyle: 'italic' }}>
+                                                Guarda o plano para iniciar o acompanhamento.
+                                            </div>
+                                        )}
+                                    </div>
                                 </header>
 
                                 {selectedSession.exercises && selectedSession.exercises.length > 0 ? (
                                     <div className="workout-phases-container">
                                         {['warmup', 'main', 'cooldown'].map(phase => {
                                             const phaseExercises = selectedSession.exercises.filter(ex => (ex.phase || 'main') === phase);
-                                            if (phaseExercises.length === 0) return null;
+                                            
+                                            const dayWarmupDesc = phase === 'warmup' ? selectedSession.warmup?.description : null;
+                                            const dayCooldownDesc = phase === 'cooldown' ? selectedSession.cooldown?.description : null;
+                                            const phaseDescription = dayWarmupDesc || dayCooldownDesc;
 
-                                            const phaseTitle = phase === 'warmup' ? '🔥 Aquecimento' : 
+                                            if (phaseExercises.length === 0 && !phaseDescription) return null;
+
+                                            const phaseTitle = phase === 'warmup' ? '🔥 Aquecimento Específico' : 
                                                              phase === 'cooldown' ? '🧊 Retorno à Calma' : 
                                                              '🏋️ Parte Principal';
 
@@ -304,7 +435,15 @@ export default function TrainingPlanner({ onBack, profile }) {
                                                     <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: phase === 'main' ? 'var(--primary-color)' : 'var(--text-muted)' }}>
                                                         {phaseTitle}
                                                     </h4>
-                                                    <div className="workout-table-container">
+
+                                                    {phaseDescription && (
+                                                        <div style={{ padding: '1rem', background: phase === 'warmup' ? 'rgba(249, 115, 22, 0.05)' : 'rgba(59, 130, 246, 0.05)', borderLeft: `3px solid ${phase === 'warmup' ? '#f97316' : '#3b82f6'}`, borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                                            {phaseDescription}
+                                                        </div>
+                                                    )}
+
+                                                    {phaseExercises.length > 0 && (
+                                                        <div className="workout-table-container">
                                                         <table>
                                                             <thead>
                                                                 <tr>
@@ -345,7 +484,8 @@ export default function TrainingPlanner({ onBack, profile }) {
                                                                 ))}
                                                             </tbody>
                                                         </table>
-                                                    </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
@@ -425,6 +565,7 @@ export default function TrainingPlanner({ onBack, profile }) {
                     `}</style>
                 </div>
             )}
+
         </div>
     )
 }

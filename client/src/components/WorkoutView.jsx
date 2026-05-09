@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Share2, Download, ChevronLeft, Trophy, Clock, Info, X, CheckSquare, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
+import { Share2, Download, ChevronLeft, Trophy, Clock, Info, X, CheckSquare, TrendingUp, ChevronDown, ChevronUp, Pin } from 'lucide-react'
 import { apiFetch } from '../lib/api'
+import FeedbackModal from './FeedbackModal'
 
 // Execution notes database linked to crossfit.com movements
 const EXERCISE_NOTES = {
@@ -58,6 +59,11 @@ const EXERCISE_NOTES = {
     'remada': { how: 'Puxa o peso para junto do abdómen com o cotovelo colado ao corpo. Aperta as omoplatas no topo.', url: 'https://www.youtube.com/watch?v=6KA7V6zW2o8' },
     'corrida': { how: 'Aterragem no médio-pé, ligeira inclinação à frente, braços a 90º com swing eficiente.', url: 'https://www.youtube.com/watch?v=_kH5v_V6S00' },
     'alongamentos': { how: 'Série de alongamentos passivos. Segura cada posição por 20-30 segundos para relaxar o músculo.', url: 'https://www.youtube.com/watch?v=zZ879i26-K0' },
+    'dip': { how: 'Começa em suporte alto (argolas, barras paralelas ou banco). Desce o corpo dobrando os cotovelos até que os ombros fiquem abaixo do cotovelo. Empurra de volta até à extensão total.', url: 'https://www.crossfit.com/essentials/the-ring-dip' },
+    'dips estritos': { how: 'Sem usar balanço das pernas, desce o corpo nas barras paralelas até os ombros passarem a linha dos cotovelos. Empurra com força até esticar totalmente os braços.', url: 'https://www.youtube.com/watch?v=2z8JmcrW-As' },
+    'db dip': { how: 'Dips feitos com apoio de halteres ou em banco com carga extra. Foco na amplitude e controlo na descida.', url: 'https://www.youtube.com/watch?v=2z8JmcrW-As' },
+    'abdominal': { how: 'Deitado de costas, sola dos pés juntas (borboleta). Toca com as mãos atrás da cabeça e depois à frente dos pés.', url: 'https://www.crossfit.com/essentials/the-sit-up' },
+    'sit-up': { how: 'Deitado de costas, sola dos pés juntas. Toca com as mãos atrás da cabeça e depois à frente dos pés usando o core para subir.', url: 'https://www.crossfit.com/essentials/the-sit-up' },
 }
 
 const findExerciseNote = (name) => {
@@ -69,25 +75,38 @@ const findExerciseNote = (name) => {
     return null
 }
 
-export default function WorkoutView({ data, onBack }) {
+export default function WorkoutView({ data, onBack, onPin }) {
     const {
         exercises = [],
         totalTime = data.duration || 0,
         summary = { structure: data.focus, type: 'Plano Semanal' },
-        scheduledWorkoutId
+        scheduledWorkoutId,
+        boxWodId,
+        globalWodId
     } = data || {}
-    const [infoModal, setInfoModal] = useState(null)
+    const [infoExpanded, setInfoExpanded] = useState(null)
+    const [phaseInfoExpanded, setPhaseInfoExpanded] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [score, setScore] = useState('')
     const [notes, setNotes] = useState('')
     const [completed, setCompleted] = useState(false)
     const [expandedEvolution, setExpandedEvolution] = useState({})
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false)
 
     const toggleEvolution = (key) => {
         setExpandedEvolution(prev => ({
             ...prev,
             [key]: !prev[key]
         }))
+    }
+
+    const toggleInfo = (key) => {
+        if (infoExpanded === key) setInfoExpanded(null);
+        else setInfoExpanded(key);
+    }
+
+    const togglePhaseInfo = (phase) => {
+        setPhaseInfoExpanded(prev => ({ ...prev, [phase]: !prev[phase] }))
     }
 
     const handleExportPDF = () => {
@@ -140,7 +159,12 @@ export default function WorkoutView({ data, onBack }) {
     }
 
     const handleFinish = async () => {
-        if (!score && scheduledWorkoutId) {
+        if (scheduledWorkoutId) {
+            setShowFeedbackModal(true);
+            return;
+        }
+
+        if (!score) {
             alert('Por favor, insere o teu resultado (tempo ou carga total).');
             return;
         }
@@ -151,6 +175,8 @@ export default function WorkoutView({ data, onBack }) {
                 method: 'POST',
                 body: JSON.stringify({
                     scheduledWorkoutId,
+                    boxWodId,
+                    globalWodId,
                     score,
                     notes,
                     type: 'RX' // Default
@@ -170,80 +196,45 @@ export default function WorkoutView({ data, onBack }) {
 
     return (
         <div className="workout-view animate-fade">
-            {/* Info Modal */}
-            {infoModal && (
-                <div
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}
-                    onClick={() => setInfoModal(null)}
-                >
-                    <div
-                        className="premium-card animate-fade"
-                        style={{ maxWidth: '500px', width: '100%', position: 'relative', background: 'white' }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <button
-                            onClick={() => setInfoModal(null)}
-                            style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'var(--surface-color)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        >
-                            <X size={18} />
-                        </button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-                            <div style={{ background: 'var(--primary-glow)', padding: '0.75rem', borderRadius: '1rem' }}>
-                                <Info size={24} color="var(--primary-color)" />
-                            </div>
-                            <h3 style={{ margin: 0 }}>{infoModal.name}</h3>
-                        </div>
-                        <p style={{ lineHeight: '1.8', fontSize: '1.05rem', color: 'var(--text-main)', marginBottom: '1.5rem' }}>{infoModal.note.how}</p>
-                        {infoModal.note.url && (
-                            <a
-                                href={infoModal.note.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-outline"
-                                style={{ width: 'auto' }}
-                            >
-                                📹 Ver vídeo tutorial
-                            </a>
-                        )}
-                    </div>
-                </div>
-            )}
 
             <button onClick={onBack} className="chip" style={{ marginBottom: '1.5rem' }}>
                 <ChevronLeft size={16} /> Voltar
             </button>
 
             {/* Hero Header Card */}
-            <div className="premium-card" style={{
-                marginBottom: '2rem',
-                padding: '2.5rem',
+        <div className="premium-card" style={{
+                marginBottom: '1.5rem',
+                padding: '1.5rem',
                 background: 'linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95)), url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 color: 'white'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                            <Trophy size={20} color="var(--accent-color)" />
-                            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.8rem', color: 'var(--accent-color)' }}>Sessão de Hoje</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.4rem' }}>
+                            <Trophy size={14} color="var(--accent-color)" />
+                            <span style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem', color: 'var(--accent-color)' }}>Sessão de Hoje</span>
                         </div>
-                        <h1 style={{ color: 'white', margin: 0, fontSize: '2.5rem' }}>{summary.structure || 'Treino Personalizado'}</h1>
+                        <h1 style={{ color: 'white', margin: 0, fontSize: 'clamp(1.2rem, 4vw, 1.75rem)', lineHeight: 1.25, wordBreak: 'break-word' }}>{summary.structure || 'Treino Personalizado'}</h1>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button onClick={handleShare} className="chip" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}><Share2 size={24} /></button>
-                        <button onClick={handleExportPDF} className="chip" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}><Download size={24} /></button>
+                    <div style={{ display: 'flex', gap: '8px', marginLeft: '0.75rem', flexShrink: 0 }}>
+                        <button onClick={() => onPin(data)} className="chip" style={{ background: 'var(--primary-color)', color: 'white', border: 'none', boxShadow: '0 4px 12px var(--primary-glow)', padding: '0.5rem' }}>
+                            <Pin size={18} />
+                        </button>
+                        <button onClick={handleShare} className="chip" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem' }}><Share2 size={18} /></button>
+                        <button onClick={handleExportPDF} className="chip" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem' }}><Download size={18} /></button>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
                     <div>
-                        <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Duração</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{totalTime} min</div>
+                        <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Duração</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800 }}>{totalTime} min</div>
                     </div>
                     <div>
-                        <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Foco</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{summary.type || 'Híbrido'}</div>
+                        <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Foco</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800 }}>{summary.type || 'Híbrido'}</div>
                     </div>
                 </div>
             </div>
@@ -264,9 +255,15 @@ export default function WorkoutView({ data, onBack }) {
             <div className="workout-phases-container">
                 {['warmup', 'main', 'cooldown'].map(phase => {
                     const phaseExercises = exercises.filter(ex => (ex.phase || 'main') === phase);
-                    if (phaseExercises.length === 0) return null;
+                    
+                    // New logic: check for day-level descriptions (from the new PLANO schema)
+                    const dayWarmupDesc = phase === 'warmup' ? data.warmup?.description : null;
+                    const dayCooldownDesc = phase === 'cooldown' ? data.cooldown?.description : null;
+                    const phaseDescription = dayWarmupDesc || dayCooldownDesc;
 
-                    const phaseTitle = phase === 'warmup' ? '🔥 Aquecimento (Sugestão)' : 
+                    if (phaseExercises.length === 0 && !phaseDescription) return null;
+
+                    const phaseTitle = phase === 'warmup' ? '🔥 Aquecimento Específico' : 
                                      phase === 'cooldown' ? '🧊 Retorno à Calma' : 
                                      '🏋️ Parte Principal';
 
@@ -282,84 +279,169 @@ export default function WorkoutView({ data, onBack }) {
                                 color: phase === 'main' ? 'var(--primary-color)' : 'var(--text-muted)'
                             }}>
                                 {phaseTitle}
-                                {phase !== 'main' && <span style={{ fontSize: '0.75rem', fontWeight: 400, opacity: 0.6 }}>(Não conta para o tempo)</span>}
+                                {phase !== 'main' && <span style={{ fontSize: '0.75rem', fontWeight: 400, opacity: 0.6 }}>(Preparação e Recuperação)</span>}
                             </h3>
 
-                            <div className="workout-table-container">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Exercício</th>
-                                            <th style={{ textAlign: 'center' }}>Evolução</th>
-                                            <th style={{ textAlign: 'center' }}>Séries/Reps</th>
-                                            <th style={{ textAlign: 'center' }}>Carga Sugerida</th>
-                                            <th style={{ textAlign: 'center' }}>Descanso</th>
-                                            <th style={{ textAlign: 'center' }}>Info</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {phaseExercises.map((ex, idx) => {
-                                            const note = findExerciseNote(ex.name);
-                                            return (
-                                                <tr key={idx}>
-                                                    <td data-label="Exercício">
-                                                        <div style={{ fontWeight: 800 }}>{ex.name}</div>
-                                                        {ex.adaptation && ex.adaptation.trim() !== '' && (
-                                                            <div style={{ 
-                                                                fontSize: '0.8rem', 
-                                                                color: 'var(--accent-color)', 
-                                                                background: '#fff7ed', 
-                                                                padding: '4px 8px', 
-                                                                borderRadius: '6px', 
-                                                                marginTop: '4px',
-                                                                display: 'inline-block',
-                                                                border: '1px solid #ffedd5'
-                                                            }}>
-                                                                💡 <strong>Adapt:</strong> {ex.adaptation}
-                                                            </div>
-                                                        )}
-                                                        {ex.safety_notes && <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '2px' }}>{ex.safety_notes}</div>}
-                                                    </td>
-                                                    <td data-label="Evolução" style={{ textAlign: 'center' }}>
-                                                        <button 
-                                                            onClick={() => toggleEvolution(ex.name)}
-                                                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-                                                            title="Ver histórico"
-                                                        >
-                                                            {expandedEvolution[ex.name] ? <TrendingUp size={18} color="var(--primary-color)" /> : <TrendingUp size={18} opacity={0.4} />}
-                                                        </button>
-                                                        {expandedEvolution[ex.name] && (
-                                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, marginTop: '4px', color: 'var(--accent-color)', animation: 'fadeIn 0.3s ease' }}>
-                                                                {(ex.weight_h || ex.rm_percent) && (ex.weight_h !== '—' && ex.rm_percent !== '—') ? (ex.weight_h || ex.rm_percent) : ex.reps} (Estável)
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td data-label="Séries/Reps" style={{ textAlign: 'center' }}>
-                                                        <strong>{ex.sets}</strong> <span style={{ opacity: 0.3 }}>×</span> <strong>{ex.reps}</strong>
-                                                    </td>
-                                                    <td data-label="Carga" style={{ textAlign: 'center' }}>
-                                                        <div className="chip ai-badge" style={{ margin: '0 auto' }}>
-                                                            {ex.weight_h && ex.weight_h !== '—' ? ex.weight_h : (ex.rm_percent && ex.rm_percent !== '—' ? ex.rm_percent : 'P. Corporal')}
+                            {phaseDescription && (
+                                <div>
+                                    <div className="premium-card" style={{ 
+                                        padding: '1.25rem', 
+                                        marginBottom: phaseInfoExpanded[phase] ? '0' : '1rem', 
+                                        background: phase === 'warmup' ? 'rgba(249, 115, 22, 0.05)' : 'rgba(59, 130, 246, 0.05)',
+                                        border: 'none',
+                                        borderLeft: `3px solid ${phase === 'warmup' ? '#f97316' : '#3b82f6'}`,
+                                        borderRadius: phaseInfoExpanded[phase] ? '0.75rem 0.75rem 0 0' : '0.75rem',
+                                        fontSize: '0.95rem',
+                                        lineHeight: '1.6',
+                                        color: 'var(--text-main)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: '1rem'
+                                    }}>
+                                        <span>{phaseDescription}</span>
+                                        {(phase === 'warmup' ? data.warmup?.steps : data.cooldown?.steps)?.length > 0 && (
+                                            <button
+                                                onClick={() => togglePhaseInfo(phase)}
+                                                title="Ver protocolo detalhado"
+                                                style={{
+                                                    flexShrink: 0,
+                                                    background: phase === 'warmup' ? 'rgba(249,115,22,0.12)' : 'rgba(59,130,246,0.12)',
+                                                    border: 'none',
+                                                    borderRadius: '0.5rem',
+                                                    padding: '0.4rem 0.7rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 700,
+                                                    color: phase === 'warmup' ? '#f97316' : '#3b82f6',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                            >
+                                                <Info size={14} />
+                                                {phaseInfoExpanded[phase] ? 'Fechar' : 'Protocolo'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {phaseInfoExpanded[phase] && (
+                                        <div style={{
+                                            background: phase === 'warmup' ? 'rgba(249,115,22,0.04)' : 'rgba(59,130,246,0.04)',
+                                            borderLeft: `3px solid ${phase === 'warmup' ? '#f97316' : '#3b82f6'}`,
+                                            borderTop: `1px solid ${phase === 'warmup' ? 'rgba(249,115,22,0.15)' : 'rgba(59,130,246,0.15)'}`,
+                                            borderRadius: '0 0 0.75rem 0.75rem',
+                                            padding: '1rem 1.25rem',
+                                            marginBottom: '1rem'
+                                        }}>
+                                            <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5, marginBottom: '0.75rem' }}>
+                                                {phase === 'warmup' ? '🔥 Protocolo de Aquecimento' : '🧊 Protocolo de Arrefecimento'}
+                                            </p>
+                                            <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                                {(phase === 'warmup' ? data.warmup?.steps : data.cooldown?.steps).map((step, i) => (
+                                                    <li key={i} style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                                                        {step}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="workout-exercises-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {phaseExercises.map((ex, idx) => {
+                                    const note = findExerciseNote(ex.name);
+                                    const isExpanded = infoExpanded === (idx + ex.name);
+                                    return (
+                                        <div key={idx} className="premium-card exercise-card" style={{ padding: '1.25rem', background: 'white', position: 'relative', overflow: 'hidden' }}>
+                                            {/* Decorative side bar */}
+                                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--primary-color)', opacity: 0.8 }}></div>
+                                            
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>{ex.name}</h4>
+                                                </div>
+                                                <div style={{ textAlign: 'right', marginLeft: '1rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary-color)' }}>{ex.sets} <span style={{ opacity: 0.4, fontSize: '0.9rem' }}>×</span> {ex.reps}</div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                                                <div className="chip ai-badge" style={{ margin: 0, padding: '4px 10px', fontSize: '0.85rem' }}>
+                                                    🏋️ {ex.weight_h && ex.weight_h !== '—' ? ex.weight_h : (ex.rm_percent && ex.rm_percent !== '—' ? ex.rm_percent : 'P. Corporal')}
+                                                </div>
+                                                {ex.rest && ex.rest !== '-' && (
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface-color)', padding: '4px 10px', borderRadius: '1rem' }}>
+                                                        ⏱️ {ex.rest}
+                                                    </div>
+                                                )}
+                                                
+                                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+                                                    <button 
+                                                        onClick={() => toggleEvolution(ex.name)}
+                                                        className="chip"
+                                                        style={{ padding: '6px', margin: 0, background: expandedEvolution[ex.name] ? '#eff6ff' : 'transparent', border: '1px solid var(--surface-color)', transition: 'all 0.2s ease' }}
+                                                    >
+                                                        {expandedEvolution[ex.name] ? <TrendingUp size={16} color="var(--primary-color)" /> : <TrendingUp size={16} opacity={0.4} />}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => toggleInfo(idx + ex.name)}
+                                                        className="chip"
+                                                        style={{ padding: '6px', margin: 0, background: isExpanded ? 'var(--primary-glow)' : 'transparent', border: '1px solid var(--surface-color)', transition: 'all 0.2s ease' }}
+                                                    >
+                                                        <Info size={16} color={isExpanded ? 'var(--primary-color)' : 'var(--text-muted)'} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {expandedEvolution[ex.name] && (
+                                                <div className="animate-fade" style={{ fontSize: '0.8rem', fontWeight: 600, padding: '10px 12px', background: '#f0fdf4', color: '#166534', borderRadius: '0.5rem', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <TrendingUp size={14} /> Carga Base: {(ex.weight_h || ex.rm_percent) && (ex.weight_h !== '—' && ex.rm_percent !== '—') ? (ex.weight_h || ex.rm_percent) : ex.reps} (Estável)
+                                                </div>
+                                            )}
+
+                                            {ex.adaptation && ex.adaptation.trim() !== '' && (
+                                                <div style={{ 
+                                                    fontSize: '0.85rem', 
+                                                    color: '#9a3412', 
+                                                    background: '#ffedd5', 
+                                                    padding: '10px 12px', 
+                                                    borderRadius: '0.5rem', 
+                                                    marginTop: '12px',
+                                                    border: '1px solid #fed7aa',
+                                                    lineHeight: 1.4
+                                                }}>
+                                                    💡 <strong>Adapt:</strong> {ex.adaptation}
+                                                </div>
+                                            )}
+
+                                            {isExpanded && (
+                                                <div className="animate-slide-up" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--surface-color)' }}>
+                                                    {note ? (
+                                                        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--text-main)' }}>
+                                                            <strong>Como executar:</strong> {note.how}
+                                                            {note.url && (
+                                                                <a href={note.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '0.75rem', color: 'var(--primary-color)', fontWeight: 700, textDecoration: 'none', padding: '6px 12px', background: 'var(--primary-glow)', borderRadius: '0.5rem' }}>
+                                                                    ▶️ Ver Vídeo Tutorial
+                                                                </a>
+                                                            )}
                                                         </div>
-                                                    </td>
-                                                    <td data-label="Descanso" style={{ textAlign: 'center', opacity: 0.7 }}>
-                                                        {ex.rest && ex.rest !== '-' ? ex.rest : '—'}
-                                                    </td>
-                                                    <td data-label="Info" style={{ textAlign: 'center' }}>
-                                                        {note ? (
-                                                            <button 
-                                                                onClick={() => setInfoModal({ name: ex.name, note })}
-                                                                style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer' }}
-                                                            >
-                                                                <Info size={20} />
-                                                            </button>
-                                                        ) : '—'}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                                    ) : (
+                                                        <div style={{ fontSize: '0.9rem', opacity: 0.6, fontStyle: 'italic' }}>
+                                                            Garante que realizas o movimento com amplitude total e controlo. Em caso de dúvida, consulta o teu coach.
+                                                        </div>
+                                                    )}
+                                                    {ex.safety_notes && (
+                                                         <div style={{ fontSize: '0.85rem', marginTop: '1rem', padding: '10px 12px', background: '#eff6ff', color: '#1e40af', borderRadius: '0.5rem', borderLeft: '3px solid #3b82f6' }}>
+                                                            ⚠️ <strong>Atenção:</strong> {ex.safety_notes}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     );
@@ -367,7 +449,7 @@ export default function WorkoutView({ data, onBack }) {
             </div>
 
             {/* Results Logging Section */}
-            {scheduledWorkoutId && !completed && (
+            {!completed && (
                 <div className="premium-card animate-slide-up" style={{ marginTop: '3rem', background: 'white', padding: '2.5rem' }}>
                     <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem', fontWeight: 900 }}>
                         <CheckSquare size={24} color="var(--primary-color)" /> Registar Resultado
@@ -417,6 +499,18 @@ export default function WorkoutView({ data, onBack }) {
                 <p>Otimizado pela FitTraining IA para {summary.muscleGroups?.join(', ')}.</p>
                 <p style={{ marginTop: '0.5rem' }}>Ajusta sempre a intensidade ao teu nível atual.</p>
             </footer>
+
+            {showFeedbackModal && (
+                <FeedbackModal
+                    workoutId={scheduledWorkoutId}
+                    workoutFocus={summary.structure}
+                    onClose={() => setShowFeedbackModal(false)}
+                    onSuccess={() => {
+                        setCompleted(true);
+                        setTimeout(() => onBack(), 2000);
+                    }}
+                />
+            )}
         </div>
     )
 }

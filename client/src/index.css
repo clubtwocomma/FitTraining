@@ -10,6 +10,8 @@
   --primary-color: #2563eb;
   /* Pro Blue */
   --primary-glow: rgba(37, 99, 235, 0.1);
+  --secondary-color: #6366f1;
+  /* Indigo */
   --accent-color: #10b981;
   /* Success Green */
 
@@ -33,6 +35,7 @@
   --surface-color: #1e293b;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
+  --secondary-color: #818cf8;
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
@@ -50,6 +53,9 @@ body {
   color: var(--text-main);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
   transition: background-color var(--transition-smooth);
 }
 
@@ -57,7 +63,8 @@ body {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1rem;
+  padding-bottom: 7rem; /* Space for bottom nav */
 }
 
 .glass {
@@ -140,6 +147,7 @@ label {
 input[type="number"],
 input[type="password"],
 input[type="text"],
+input[type="email"],
 select,
 textarea {
   width: 100%;
@@ -149,7 +157,7 @@ textarea {
   background: var(--surface-color);
   color: var(--text-main);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 16px !important; /* Force 16px to prevent iOS auto-zoom */
   transition: all var(--transition-smooth);
   box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
 }
@@ -199,25 +207,25 @@ textarea:focus {
 
 /* Typography */
 h1 {
-  font-size: 2.75rem;
+  font-size: clamp(1.6rem, 5vw, 2.5rem);
   font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 1.25rem;
+  line-height: 1.15;
+  margin-bottom: 1rem;
   letter-spacing: -0.03em;
   color: var(--text-main);
 }
 
 h2 {
-  font-size: 1.75rem;
+  font-size: clamp(1.2rem, 4vw, 1.75rem);
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   letter-spacing: -0.02em;
   color: var(--text-main);
 }
 
 p {
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 /* Animations */
@@ -411,15 +419,15 @@ tr:last-child td {
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .container {
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.875rem;
   }
 
   h1 {
-    font-size: 2.2rem;
+    font-size: clamp(1.4rem, 5vw, 1.9rem);
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.1rem, 4vw, 1.4rem);
   }
 
   .premium-card {
@@ -429,13 +437,21 @@ tr:last-child td {
   .bottom-nav {
     width: 100%;
     bottom: 0;
+    left: 0;
+    transform: none;
     border-radius: 1.5rem 1.5rem 0 0;
-    padding: 0.5rem;
+    padding: 0.5rem 0.25rem;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-nav button {
+    padding: 0.5rem 0.25rem;
+    gap: 2px;
   }
 
   .bottom-nav button span {
-    display: none;
-    /* Hide labels for more space */
+    font-size: 0.65rem;
+    white-space: nowrap;
   }
 
   /* Table transformations for mobile */
@@ -504,8 +520,8 @@ tr:last-child td {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 2rem;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
   text-align: center;
 }
 

@@ -48,7 +48,7 @@ async function main() {
 
     const adminUser = await prisma.user.upsert({
         where: { email: 'admin@fittraining.com' },
-        update: {},
+        update: { role: 'ADMIN' },
         create: {
             email: 'admin@fittraining.com',
             password: 'fittraining_admin_pass', // Idealmente usar hash, mas para seed serve

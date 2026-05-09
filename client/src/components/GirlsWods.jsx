@@ -3,7 +3,7 @@ import { Flame, ChevronRight } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import ShareMenu from './ShareMenu'
 
-export default function GirlsWods() {
+export default function GirlsWods({ onStartWorkout }) {
     const [girls, setGirls] = useState([])
     const [selectedGirl, setSelectedGirl] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -210,7 +210,23 @@ export default function GirlsWods() {
                             )}
 
                             <div style={{ marginTop: '3rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#db2777' }} onClick={() => window.print()}>
+                                <button 
+                                    className="btn btn-primary" 
+                                    style={{ flex: 2, minWidth: '200px', background: '#db2777', height: '60px', fontSize: '1.1rem' }} 
+                                    onClick={() => onStartWorkout({
+                                        globalWodId: selectedGirl.id,
+                                        exercises: selectedGirl.workout,
+                                        duration: selectedGirl.amrap || 20,
+                                        focus: selectedGirl.name,
+                                        summary: {
+                                            structure: selectedGirl.rounds ? `${selectedGirl.rounds} Rounds` : (selectedGirl.amrap ? `AMRAP ${selectedGirl.amrap}min` : 'For Time'),
+                                            type: 'Girl WOD'
+                                        }
+                                    })}
+                                >
+                                    Fazer Treino
+                                </button>
+                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#9d174d', height: '60px' }} onClick={() => window.print()}>
                                     Exportar PDF
                                 </button>
                                 <ShareMenu wod={selectedGirl} type="girl" accent="#db2777" variant="light" />

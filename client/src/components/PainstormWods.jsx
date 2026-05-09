@@ -3,7 +3,7 @@ import { Zap, ChevronRight } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import ShareMenu from './ShareMenu'
 
-export default function PainstormWods() {
+export default function PainstormWods({ onStartWorkout }) {
     const [wods, setWods] = useState([])
     const [selectedWod, setSelectedWod] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -184,8 +184,24 @@ export default function PainstormWods() {
                                 </table>
                             </div>
 
-                            <div style={{ marginTop: '3rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#1e40af' }} onClick={() => window.print()}>
+                             <div style={{ marginTop: '3rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                <button 
+                                    className="btn btn-primary" 
+                                    style={{ flex: 2, minWidth: '200px', background: '#1e40af', height: '60px', fontSize: '1.1rem' }} 
+                                    onClick={() => onStartWorkout({
+                                        globalWodId: selectedWod.id,
+                                        exercises: selectedWod.workout,
+                                        duration: 30, // Default for Painstorms
+                                        focus: selectedWod.name,
+                                        summary: {
+                                            structure: selectedWod.rounds ? `${selectedWod.rounds} Rounds` : 'For Time',
+                                            type: 'Painstorm'
+                                        }
+                                    })}
+                                >
+                                    Fazer Treino
+                                </button>
+                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#172554', height: '60px' }} onClick={() => window.print()}>
                                     Exportar PDF
                                 </button>
                                 <ShareMenu wod={selectedWod} type="painstorm" accent="#1e40af" variant="light" />

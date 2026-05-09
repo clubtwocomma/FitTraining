@@ -24,6 +24,7 @@ export default function WorkoutForm({ onGenerate, profile, onBack }) {
     const [time, setTime] = useState(30)
     const [selectedMuscles, setSelectedMuscles] = useState(['corpo inteiro'])
     const [trainingType, setTrainingType] = useState('both')
+    const [optimization, setOptimization] = useState('')
 
     // Auto-select equipment based on User Profile Environment!
     const [selectedEquipment, setSelectedEquipment] = useState(() => {
@@ -82,7 +83,8 @@ export default function WorkoutForm({ onGenerate, profile, onBack }) {
             type: trainingType,
             equipment: selectedEquipment,
             aiProvider,
-            clientApiKey
+            clientApiKey,
+            optimization
         })
     }
 
@@ -116,7 +118,8 @@ export default function WorkoutForm({ onGenerate, profile, onBack }) {
             type: randomType,
             equipment: selectedEquipment,
             aiProvider,
-            clientApiKey
+            clientApiKey,
+            optimization
         })
     }
 
@@ -163,6 +166,18 @@ export default function WorkoutForm({ onGenerate, profile, onBack }) {
                         onChange={(e) => setTime(e.target.value)}
                         placeholder="Tempo personalizado..."
                     />
+                </div>
+
+                {/* Optimization / Specific Requests */}
+                <div className="form-group">
+                    <label style={{ color: 'var(--primary-color)', fontWeight: 800 }}><Sparkles size={18} /> Otimização do Treino (Opcional)</label>
+                    <textarea 
+                        value={optimization}
+                        onChange={(e) => setOptimization(e.target.value)}
+                        placeholder="Ex: Tenho uma dor no ombro direito; Quero focar muito nos glúteos; Sem exercícios com saltos hoje..."
+                        style={{ width: '100%', minHeight: '100px', padding: '1rem', borderRadius: '1rem', border: '2px solid var(--primary-color)', background: 'var(--surface-color)', color: 'var(--text-main)', fontSize: '1rem', resize: 'vertical', marginTop: '0.5rem' }}
+                    />
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', opacity: 0.6 }}>A IA irá adaptar o plano para respeitar estritamente estas indicações.</p>
                 </div>
 
                 {/* Muscle Groups */}

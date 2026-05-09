@@ -21,8 +21,10 @@ export default function CalendarView({ onBack, onStartWorkout, onNewPlan, planId
                 if (planId) {
                     const target = data.find(p => p.id === planId);
                     setActivePlan(target || data[0]);
+                    console.log('[Calendar] Active Plan Loaded:', target || data[0]);
                 } else {
                     setActivePlan(data[0]);
+                    console.log('[Calendar] Active Plan Loaded:', data[0]);
                 }
             } else if (!data.error) {
                 setActivePlan(data);
@@ -109,6 +111,26 @@ export default function CalendarView({ onBack, onStartWorkout, onNewPlan, planId
                     </button>
                 </div>
             </header>
+
+            {/* Coach Insights (Phase 2) */}
+            {activePlan.coachingInsights?.coach_insight && (
+                <div className="premium-card animate-slide-up" style={{
+                    marginBottom: '2rem',
+                    padding: '1.5rem',
+                    background: 'var(--surface-color)',
+                    borderLeft: '4px solid var(--primary-color)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.75rem' }}>
+                        <div style={{ background: 'var(--primary-color)', color: 'white', padding: '6px', borderRadius: '50%', display: 'flex' }}>
+                            <Sparkles size={16} />
+                        </div>
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Feedback do Teu Treinador</h3>
+                    </div>
+                    <p style={{ fontSize: '0.95rem', lineHeight: '1.5', margin: 0, opacity: 0.8, fontStyle: 'italic' }}>
+                        "{activePlan.coachingInsights.coach_insight}"
+                    </p>
+                </div>
+            )}
 
             {/* Calendar Widget */}
             <div className="premium-card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>

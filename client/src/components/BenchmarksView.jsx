@@ -4,7 +4,7 @@ import HeroWods from './HeroWods';
 import GirlsWods from './GirlsWods';
 import PainstormWods from './PainstormWods';
 
-export default function BenchmarksView({ onBack }) {
+export default function BenchmarksView({ onBack, onStartWorkout }) {
     const [activeTab, setActiveTab] = useState('heroes'); // 'heroes', 'girls', or 'painstorms'
 
     return (
@@ -91,9 +91,9 @@ export default function BenchmarksView({ onBack }) {
             </header>
 
             <div className="benchmarks-content">
-                {activeTab === 'heroes' && <HeroWods />}
-                {activeTab === 'girls' && <GirlsWods />}
-                {activeTab === 'painstorms' && <PainstormWods />}
+                {activeTab === 'heroes' && <HeroWods onStartWorkout={onStartWorkout} />}
+                {activeTab === 'girls' && <GirlsWods onStartWorkout={onStartWorkout} />}
+                {activeTab === 'painstorms' && <PainstormWods onStartWorkout={onStartWorkout} />}
             </div>
 
             <style>{`

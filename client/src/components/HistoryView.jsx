@@ -127,43 +127,118 @@ export default function HistoryView({ onBack }) {
                         <div className="spinner" />
                     </div>
                 ) : activeTab === 'history' ? (
-                    <div className="history-timeline">
+                    <div className="history-timeline animate-fade">
+                        {history.length > 0 && (
+                            <div className="premium-card" style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(3, 1fr)', 
+                                gap: '10px', 
+                                padding: '1.25rem', 
+                                marginBottom: '2rem',
+                                background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)',
+                                color: 'white',
+                                textAlign: 'center'
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Total</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{history.length}</div>
+                                </div>
+                                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Mês</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>
+                                        {history.filter(h => new Date(h.createdAt).getMonth() === new Date().getMonth()).length}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Recordes</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>
+                                        {Object.keys(wodPRs).length + Object.keys(benchmarks).length}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {history.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '4rem 2rem', opacity: 0.5 }}>
                                 <Calendar size={48} style={{ marginBottom: '1rem' }} />
                                 <p>Ainda não tens treinos registados.</p>
                             </div>
                         ) : (
-                            history.map(item => (
-                                <div key={item.id} className="premium-card history-item" style={{ marginBottom: '1rem', padding: '1.5rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                        <div>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-color)', textTransform: 'uppercase' }}>
-                                                {new Date(item.createdAt).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                            </span>
-                                            <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.25rem' }}>
-                                                {item.wod?.title || item.scheduledWorkout?.focus || 'Treino FitTraining'}
-                                            </h3>
-                                        </div>
-                                        <div className="chip ai-badge" style={{ background: 'var(--primary-glow)', color: 'var(--primary-color)' }}>
-                                            {item.type}
-                                        </div>
-                                    </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {history.map(item => {
+                                     let parsedFeedback = null;
+                                     if (item.type === 'plan_feedback') {
+                                         try {
+                                             parsedFeedback = JSON.parse(item.notes);
+                                         } catch (e) {}
+                                     }
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Resultado</div>
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary-color)' }}>{item.score}</div>
-                                        </div>
-                                        {item.notes && (
-                                            <div>
-                                                <div style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Notas</div>
-                                                <div style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.notes}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
+                                     return (
+                                         <div key={item.id} className="premium-card history-item" style={{ 
+                                             padding: '1.25rem', 
+                                             marginBottom: '0.5rem',
+                                             borderLeft: `4px solid ${parsedFeedback ? '#4f46e5' : 'var(--primary-color)'}`
+                                         }}>
+                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: parsedFeedback ? '0.75rem' : '0' }}>
+                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-color)', opacity: 0.6, whiteSpace: 'nowrap' }}>
+                                                         {new Date(item.createdAt).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}
+                                                     </span>
+                                                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '0.95rem' }}>
+                                                         {item.boxWod?.title || item.globalWod?.name || item.scheduledWorkout?.focus || 'Treino'}
+                                                     </div>
+                                                 </div>
+                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                                                     <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary-color)' }}>
+                                                         {parsedFeedback ? `RPE ${parsedFeedback.rpe}` : item.score}
+                                                     </span>
+                                                     <span style={{ 
+                                                         fontSize: '0.6rem', 
+                                                         fontWeight: 800, 
+                                                         opacity: 0.5, 
+                                                         textTransform: 'uppercase', 
+                                                         background: 'var(--surface-color)', 
+                                                         padding: '2px 6px', 
+                                                         borderRadius: '4px' 
+                                                     }}>
+                                                         {item.type === 'plan_feedback' ? 'TREINADOR' : item.type}
+                                                     </span>
+                                                 </div>
+                                             </div>
+
+                                             {parsedFeedback ? (
+                                                 <div style={{ fontSize: '0.85rem' }}>
+                                                     {parsedFeedback.comment && (
+                                                         <div style={{ marginBottom: '0.5rem', fontStyle: 'italic', opacity: 0.8 }}>
+                                                             "{parsedFeedback.comment}"
+                                                         </div>
+                                                     )}
+                                                     {parsedFeedback.aiProcessed?.adjustments_for_next && (
+                                                         <div style={{ 
+                                                             background: '#f8fafc', 
+                                                             padding: '0.75rem', 
+                                                             borderRadius: '0.75rem', 
+                                                             border: '1px solid var(--surface-color)',
+                                                             fontSize: '0.8rem'
+                                                         }}>
+                                                             <div style={{ fontWeight: 800, color: '#4f46e5', marginBottom: '4px', textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                                                                 Ajuste p/ Próximo Treino: {parsedFeedback.aiProcessed.adjustments_for_next.intensity_recommendation}
+                                                             </div>
+                                                             <div style={{ opacity: 0.7 }}>
+                                                                 {parsedFeedback.aiProcessed.adjustments_for_next.intensity_note}
+                                                             </div>
+                                                         </div>
+                                                     )}
+                                                 </div>
+                                             ) : item.notes && (
+                                                 <div style={{ fontSize: '0.7rem', opacity: 0.4, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+                                                     {item.notes}
+                                                 </div>
+                                             )}
+                                         </div>
+                                     );
+                                 })}
+                            </div>
                         )}
                     </div>
                 ) : activeTab === 'benchmarks' ? (

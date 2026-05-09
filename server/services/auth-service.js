@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
+const { sendPasswordResetEmail } = require('../utils/email');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
@@ -62,6 +64,79 @@ async function loginUser(email, password) {
 }
 
 /**
+ * Change Password (Authenticated)
+ */
+async function changePassword(userId, oldPassword, newPassword) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+
+    if (!user) throw new Error('Utilizador não encontrado.');
+
+    const isValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isValid) throw new Error('Palavra-passe atual incorreta.');
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedNewPassword }
+    });
+
+    return true;
+}
+
+/**
+ * Request Password Reset
+ */
+async function requestPasswordReset(email) {
+    const user = await prisma.user.findUnique({
+        where: { email }
+    });
+
+    // We return true even if user doesn't exist for security (don't leak emails)
+    if (!user) return true;
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { resetToken, resetTokenExpiry }
+    });
+
+    await sendPasswordResetEmail(email, resetToken);
+    return true;
+}
+
+/**
+ * Reset Password with Token
+ */
+async function resetPassword(token, newPassword) {
+    const user = await prisma.user.findFirst({
+        where: {
+            resetToken: token,
+            resetTokenExpiry: { gt: new Date() }
+        }
+    });
+
+    if (!user) {
+        throw new Error('Token inválido ou expirado.');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            password: hashedNewPassword,
+            resetToken: null,
+            resetTokenExpiry: null
+        }
+    });
+
+    return true;
+}
+
+/**
  * Middleware to protect routes
  */
 function authenticateToken(req, res, next) {
@@ -105,6 +180,9 @@ async function updateProfile(userId, profileData) {
 module.exports = {
     registerUser,
     loginUser,
+    changePassword,
+    requestPasswordReset,
+    resetPassword,
     updateProfile,
     authenticateToken,
     authorizeRoles

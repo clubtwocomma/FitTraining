@@ -1,0 +1,13 @@
+◇ injecting env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+[Static] Serving from /home/rjafreitas/.openclaw/workspace/FitTraining/server/public
+Server running on port 8510
+[Static Request] GET /assets/index-238e304d.css
+[Static Request] GET /assets/index-58ce3421.js
+[404] File not found: /assets/index-238e304d.css
+[404] File not found: /assets/index-58ce3421.js
+[Static Request] GET /assets/index-ea6e8391.js
+[Static Request] GET /assets/index-02ba7cce.css
+[Static Request] GET /assets/index-ea6e8391.js
+[Static Request] GET /assets/index-02ba7cce.css
+[Static Request] GET /assets/index-ea6e8391.js
+[Static Request] GET /assets/index-02ba7cce.css

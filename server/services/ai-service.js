@@ -20,7 +20,7 @@ function callChatCompletions(baseUrl, apiKey, messages, model) {
       model: model || 'openai',
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: 16000,
       response_format: { type: 'json_object' }
     });
 
@@ -61,7 +61,7 @@ function callChatCompletions(baseUrl, apiKey, messages, model) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(60000, () => { req.destroy(); reject(new Error('AI request timed out (60s)')); });
+    req.setTimeout(120000, () => { req.destroy(); reject(new Error('AI request timed out (120s)')); });
     req.write(postData);
     req.end();
   });
@@ -76,11 +76,18 @@ function extractJSON(text) {
   // Try extracting from ```json ... ``` blocks
   const m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (m) try { return JSON.parse(m[1].trim()); } catch (e) { }
+  // Try finding first [ ... ] block
+  const startArr = text.indexOf('[');
+  const endArr = text.lastIndexOf(']');
+  if (startArr !== -1 && endArr > startArr) {
+    try { return JSON.parse(text.slice(startArr, endArr + 1)); } catch (e) { }
+  }
+
   // Try finding first { ... } block
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if (start !== -1 && end > start) {
-    try { return JSON.parse(text.slice(start, end + 1)); } catch (e) { }
+  const startObj = text.indexOf('{');
+  const endObj = text.lastIndexOf('}');
+  if (startObj !== -1 && endObj > startObj) {
+    try { return JSON.parse(text.slice(startObj, endObj + 1)); } catch (e) { }
   }
   return null;
 }
@@ -100,156 +107,162 @@ function resolveProvider(provider, clientApiKey) {
       return { baseUrl: 'https://gen.pollinations.ai', apiKey: clientApiKey, model: 'openai' };
     }
     // For pollination or any other, use Pollinations with client key
-    return { baseUrl: 'https://gen.pollinations.ai', apiKey: clientApiKey, model: 'openai' };
+    return { baseUrl: 'https://gen.pollinations.ai', apiKey: clientApiKey, model: 'openai-large' };
   }
   // Default: use server Pollinations key
-  return { baseUrl: 'https://gen.pollinations.ai', apiKey: DEFAULT_API_KEY, model: 'openai' };
+  return { baseUrl: 'https://gen.pollinations.ai', apiKey: DEFAULT_API_KEY, model: 'openai-large' };
 }
 
+const { PROMPTS, MODALITIES, ATHLETE_PROFILE_TEMPLATE } = require('./fittraining-prompts-v2');
+
 /**
- * Build the comprehensive workout generation prompt with all user settings.
+ * Helper to call AI and extract JSON.
  */
-function buildWorkoutPrompt(params) {
-  const { time, muscleGroups, type, equipment, profile } = params;
-  const gender = profile?.gender || 'homem';
-  const level = profile?.level || 'iniciante';
-  const environment = profile?.environment || 'ginásio';
-  const homeEquipment = profile?.homeEquipment || [];
-
-  const allKnownEquip = ['halteres', 'barra olímpica', 'barra de pull-ups', 'kettlebells', 'bicicleta estática', 'passadeira', 'banco', 'elásticos', 'bola medicinal', 'caixa'];
-  const equipList = (equipment && equipment.length > 0 ? equipment : ['nenhum (peso corporal)']);
-  const forbiddenEquip = allKnownEquip.filter(e => !equipList.includes(e));
-
-  return `### IDENTIDADE E REGRAS DE OURO ###
-És um programador de treinos ELITE. A tua missão é definir o INTUITO e o ESFORÇO do treino com precisão.
-
-1. REGRAS DE ESFORÇO (%RM):
-- É EXPRESSAMENTE PROIBIDO usar KGs específicos (ex: "50kg").
-- O campo weight_h e weight_m DEVE conter apenas a PERCENTAGEM DO RM (Repetição Máxima) para definir o nível de esforço.
-- ✅ FORMATO OBRIGATÓRIO: "X% RM" (Ex: "75% RM", "60% RM", "85% RM").
-- Se for Peso Corporal, escreve "Peso Corporal".
-
-2. INTUITO DO TREINO (NOVO):
-- No campo "intent" do summary, deves descrever brevemente o objetivo do treino.
-
-3. REGRAS DE EQUIPAMENTO (CRÍTICO):
-- LISTA DISPONÍVEL: ${equipList.join(', ')}.
-- LISTA PROIBIDA (NÃO USAR): ${forbiddenEquip.join(', ')}.
-
-4. CARDIO E DISTÂNCIAS:
-- NUNCA uses reps numéricas. Usa sempre: "400m", "800m", "20 cal", "10 min", etc.
-
-5. ADAPTAÇÕES E EQUIPAMENTO (CRÍTICO):
-- Se houver limitações (${profile?.limitations || 'Nenhuma'}), ADAPTA os exercícios.
-- É PROIBIDO mencionar a lesão ou adaptação no nome do exercício (ex: NÃO ESCREVAS "Agachamento (Adaptado)"). Escreve apenas o nome do exercício.
-- No campo "adaptation" (NOVO), deves sugerir uma alternativa caso o utilizador não tenha o equipamento ideal ou a máquina necessária (ex: Leg Press -> Agachamento com Elásticos se for HomeGym). Considera sempre se o utilizador está em 'box' (CrossFit) ou 'homegym' (${environment}).
-
-6. ESTRUTURA DO TREINO (OBRIGATÓRIO):
-- O treino DEVE conter 3 fases: "warmup" (aquecimento), "main" (parte principal) e "cooldown" (retorno à calma).
-- O tempo total (${time} min) deve focar-se na parte principal, mas o aquecimento e cooldown devem ser sugeridos.
-
----
-PERFIL: ${gender} | Nível: ${level} | Grupos: ${muscleGroups.join(', ')} | Tempo: ${time} min.
-
-ESTRUTURA JSON:
-{
-  "totalTime": ${time},
-  "summary": { 
-    "muscleGroups": ${JSON.stringify(muscleGroups)}, 
-    "type": "${type}", 
-    "method": "AI", 
-    "structure": "Ex: AMRAP 20",
-    "intent": "Descrição breve do intuito do treino...",
-    "stimulus": "Curto (ex: Cardiovascular)"
-  },
-  "exercises": [
-    {
-      "phase": "warmup",
-      "name": "Exercício de Aquecimento",
-      "sets": 1, "reps": "10", "rest": "0s",
-      "weight_h": "-", "weight_m": "-"
-    },
-    {
-      "phase": "main",
-      "name": "Exercício Principal",
-      "sets": 3, "reps": "10", "rest": "60s",
-      "weight_h": "75% RM", "weight_m": "75% RM",
-      "adaptation": "Dica de adaptação para HomeGym ou se faltar material..."
-    },
-    {
-      "phase": "cooldown",
-      "name": "Alongamento/Mobilidade",
-      "sets": 1, "reps": "5 min", "rest": "0s",
-      "weight_h": "-", "weight_m": "-"
-    }
-  ]
-}
-
-Responde apenas com JSON.`;
+async function callGeminiAdapter(baseUrl, apiKey, systemPrompt, userPrompt, model = 'openai') {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ];
+  const rawResponse = await callChatCompletions(baseUrl, apiKey, messages, model);
+  console.log(`[AI RAW] Response length: ${rawResponse.length} chars`);
+  if (rawResponse.length > 0) {
+    console.log(`[AI RAW] Start: ${rawResponse.substring(0, 100)}...`);
+    console.log(`[AI RAW] End: ...${rawResponse.substring(rawResponse.length - 100)}`);
+  }
+  const parsed = extractJSON(rawResponse);
+  if (!parsed) {
+    throw new Error('AI response was not valid JSON');
+  }
+  return parsed;
 }
 
 /**
- * Generate a workout using AI (Pollinations.ai as primary, client keys as override).
+ * Generate a workout using AI with the V3.0 Double-Loop (Decision -> Workout).
  */
 const generateWithAI = async (provider, params) => {
-  const { clientApiKey } = params;
+  const { clientApiKey, time, muscleGroups, type, equipment, profile, optimization } = params;
   const { baseUrl, apiKey, model } = resolveProvider(provider, clientApiKey);
-  const prompt = buildWorkoutPrompt(params);
+  
+  const modality = type || 'misto';
 
-  const messages = [
-    {
-      role: 'system',
-      content: `És um Sistema Inteligente de Programação de Treinos. 
-      ZERO TOLERANCE RULES:
-      1. NÃO uses KGs. Usa apenas %RM (ex: "70% RM").
-      2. No summary, o campo "intent" deve descrever se o treino é metabólico/rápido ou força/pesado.
-      3. NÃO uses números simples para Cardio. Usa distância/calorias.
-      4. NÃO sugiras equipamento que o utilizador NÃO possui.
-      Responde em JSON e em Português de Portugal.`
+  // Map to ATHLETE_PROFILE_TEMPLATE
+  const athleteProfile = {
+    ...ATHLETE_PROFILE_TEMPLATE,
+    athlete: {
+      ...ATHLETE_PROFILE_TEMPLATE.athlete,
+      gender: profile?.gender || 'masculino',
+      level: profile?.level || 'iniciante',
+      modality: modality,
+      environment: profile?.environment || 'ginásio',
+      equipment: equipment && equipment.length > 0 ? equipment : ['peso corporal'],
+      limitations: profile?.limitations || [],
+      session_duration_minutes: parseInt(time) || 60,
     },
-    { role: 'user', content: prompt }
-  ];
-
-  console.log(`[AI] Generating workout via ${baseUrl} (provider: ${provider || 'pollinations-default'}, model: ${model})`);
+    training_history: {
+      ...ATHLETE_PROFILE_TEMPLATE.training_history,
+      last_session: {
+        ...ATHLETE_PROFILE_TEMPLATE.training_history.last_session,
+        date: new Date().toISOString().split('T')[0],
+      }
+    }
+  };
 
   try {
-    const rawResponse = await callChatCompletions(baseUrl, apiKey, messages, 'openai');
-    const parsed = extractJSON(rawResponse);
+    console.log(`[AI V3.0] Step 1: Evaluating Decision via ${baseUrl}...`);
+    const decision = await callGeminiAdapter(
+      baseUrl, apiKey, 
+      PROMPTS.DECISAO.system, 
+      PROMPTS.DECISAO.user(athleteProfile),
+      model
+    );
 
-    if (!parsed) {
-      console.error('[AI] Failed to parse JSON from response');
-      throw new Error('AI response was not valid JSON');
+    if (!decision.should_train) {
+      console.log(`[AI V3.0] Coach decision: Rest. Reason: ${decision.rest_reason}`);
+      return {
+        provider: provider || 'pollinations',
+        exercises: [],
+        summary: { type: modality, method: 'AI V3.0', intent: 'Descanso Ativo' },
+        totalTime: time,
+        aiContribution: `Treinador IA recomendou descanso: ${decision.coaching_note}`
+      };
     }
 
-    // Ensure exercises array exists and has valid structure
-    const exercises = (parsed.exercises || []).map((ex, i) => ({
-      phase: ex.phase || 'main',
-      name: ex.name || `Exercício ${i + 1}`,
-      sets: parseInt(ex.sets) || 1,
-      reps: String(ex.reps || '10'),
-      rest: ex.rest || '60s',
-      weight_h: ex.weight_h || '80% RM',
-      weight_m: ex.weight_m || '80% RM',
-      adaptation: ex.adaptation || '',
-      safety_notes: ex.safety_notes || '',
-      duration: parseInt(ex.duration) || 120,
-      order: i + 1
-    }));
+    console.log(`[AI V3.0] Step 2: Generating Workout (${modality})...`);
+    const session = await callGeminiAdapter(
+      baseUrl, apiKey,
+      PROMPTS.TREINO.system(modality),
+      PROMPTS.TREINO.user(athleteProfile, decision, optimization, modality),
+      model
+    );
 
-    console.log(`[AI] Successfully generated ${exercises.length} exercises`);
+    // Flatten V3.0 structure to the V2 format expected by generator.js
+    const flattenedExercises = [];
+    let order = 1;
+
+    (session.warmup?.exercises || []).forEach(ex => {
+      flattenedExercises.push({
+        phase: 'warmup',
+        name: ex.name,
+        sets: 1,
+        reps: ex.duration || '5 min',
+        rest: '0s',
+        weight_h: '-',
+        weight_m: '-',
+        adaptation: '',
+        safety_notes: ex.purpose || '',
+        duration: parseInt(ex.duration) * 60 || 300,
+        order: order++
+      });
+    });
+
+    (session.main?.exercises || []).forEach(ex => {
+      flattenedExercises.push({
+        phase: 'main',
+        name: ex.name,
+        sets: parseInt(ex.sets) || 3,
+        reps: ex.reps || '10',
+        rest: `${ex.rest_seconds || 60}s`,
+        weight_h: ex.weight_rx || '-',
+        weight_m: ex.weight_scaled || '-',
+        adaptation: ex.adaptation || '',
+        safety_notes: ex.safety_notes || '',
+        duration: ((parseInt(ex.sets) || 3) * 60) + ((parseInt(ex.sets) || 3) * (ex.rest_seconds || 60)),
+        order: order++
+      });
+    });
+
+    (session.cooldown?.exercises || []).forEach(ex => {
+      flattenedExercises.push({
+        phase: 'cooldown',
+        name: ex.name,
+        sets: 1,
+        reps: ex.duration || '5 min',
+        rest: '0s',
+        weight_h: '-',
+        weight_m: '-',
+        adaptation: '',
+        safety_notes: ex.purpose || '',
+        duration: parseInt(ex.duration) * 60 || 300,
+        order: order++
+      });
+    });
+
+    console.log(`[AI V3.0] Successfully generated ${flattenedExercises.length} exercises`);
 
     return {
       provider: provider || 'pollinations',
-      exercises,
-      summary: parsed.summary || { method: 'AI', type: params.type },
-      totalTime: params.time,
-      aiContribution: `AI Workout Intent: ${parsed.summary?.intent || 'Equilibrado'}`
+      exercises: flattenedExercises,
+      summary: session.summary || { method: 'AI V3.0', type: modality },
+      totalTime: session.summary?.total_time_minutes || time,
+      aiContribution: `AI Workout Intent: ${session.summary?.intent || 'Equilibrado'} | Nota: ${session.summary?.coaching_note || ''}`
     };
+
   } catch (err) {
-    console.error('[AI] Generation failed:', err.message);
+    console.error('[AI V3.0] Generation failed:', err.message);
     throw err;
   }
 };
+
 
 const testConnection = async (provider, apiKey) => {
   if (!apiKey || apiKey.length < 5) {
@@ -272,194 +285,137 @@ const testConnection = async (provider, apiKey) => {
 };
 
 const generateMultiDayPlan = async (provider, params) => {
-  const { goal, freq, period, level, limitations, type, exigency, motive, profile } = params;
-  const environment = profile?.environment || 'ginasio';
-  console.log(`[AI-Plan] Generating for environment: ${environment}`);
-  const homeEquipment = profile?.homeEquipment || [];
+  const {
+    clientApiKey, goal, freq, period, level, limitations, type, exigency,
+    motive, profile, history, lastSession, stateToday, session_duration
+  } = params;
+  const { baseUrl, apiKey, model } = resolveProvider(provider, clientApiKey);
 
+  const modality = type || 'misto';
+  const environment = profile?.athlete?.environment || profile?.environment || 'ginásio';
   const totalDays = period === 'week' ? 7 : 30;
-  const trainingDaysPerWeek = parseInt(freq);
+  const equipment = profile?.athlete?.equipment || profile?.homeEquipment || ['peso corporal'];
 
-  // Real implementation would invoke actual AI.
-  // We're mimicking the prompt structure for when the backend is hooked to LLM.
-  const prompt = `Gera um Plano de Treino de ${totalDays} Dias.
-Objetivo: ${goal}
-Tipo de Treino Preferido: ${type || 'Mistura'}
-Nível de Experiência: ${level}
-Nível de Exigência: ${exigency || 'Normal'}
-Motivo/Competição: ${motive || 'Nenhum'}
-Dias de treino por semana: ${trainingDaysPerWeek} (Distribui estrategicamente dias de "Descanso / Rest").
-Ambiente de Treino: ${environment === 'casa' ? `Em Casa (Equipamento disponível: ${homeEquipment.length > 0 ? homeEquipment.join(', ') : 'Apenas Peso Corporal/Calistenia'})` : environment === 'box' ? 'Box de CrossFit' : 'Ginásio Completo'}
-Limitações físicas reportadas: ${limitations || 'Nenhuma'}
-
-REGRAS:
-1. Deves devolver a resposta ESTRITAMENTE num formato JSON.
-2. Cada sessão de treino deve ter um "focus" (ex: "Peito e Triceps" ou "WOD Funcional").
-3. Dias de descanso DEVEM existir para perfazer os ${totalDays} dias. Título: "Descanso Ativo" ou "Recuperação", sem exercícios.
-   > CRÍTICO: Para dias de descanso, o JSON deve obrigatoriamente incluir o campo "rest_justification", explicando psicologicamente à pessoa (com base na exigência e objetivos) PORQUE o descanso ou recuperação ativa (caminhada, yoga, mobilidade) é estritamente vital hoje.
-4. Para TODOS os exercícios de força, deves incluir a percentagem de 1RM (%RM).
-5. Deves ter em extrema consideração e ADAPTAR TODOS os exercícios se houver limitações explícitas. É PROIBIDO mencionar a lesão ou adaptação no nome do exercício.
-6. Se o Tipo de Treino for 'calistenia', usa EXCLUSIVAMENTE o peso corporal em todo o plano.
-7. Se o Tipo de Treino for 'hyrox', planeia blocos de corrida severa intercalada com estações funcionais pesadas (Trenó/Sled, Wall Balls, Burpees).
-8. Se a Exigência for 'extrema' (Bi-diário de Elite), nos dias de treino deves assumir 2 sessões e espelhá-lo no foco (ex: "Manhã: Corrida / Tarde: Força") e duplicar o volume.
-
-ESTRUTURA JSON EXIGIDA:
-{
-  "title": "Plano Personalizado...",
-  "limitationsConsidered": "...",
-  "sessions": [
-    {
-      "day": 1,
-      "focus": "Costas & Biceps" | "Descanso",
-      "duration": "60 min" | "-",
-      "rest_justification": "Explicação científica e motivacional para o descanso ativo (apenas dias de descanso)",
-      "exercises": [
-        {
-          "name": "Nome",
-          "sets": "X",
-          "reps": "X",
-          "rest": "X seg",
-          "rm_percent": "75% RM",
-          "adaptation": "Alternativa caso não tenhas material..."
-        }
-      ]
+  // ── Fase A: Construir athleteProfile com dados reais ─────────────────────────
+  const athleteProfile = {
+    athlete: {
+      gender: profile?.gender || 'masculino',
+      age: profile?.age || null,
+      level: level || 'iniciante',
+      modality,
+      environment,
+      equipment,
+      limitations: limitations ? limitations.split(/[,.;]+/).map(s => s.trim()).filter(Boolean) : [],
+      session_duration_minutes: session_duration || 60,
+      goal: { primary: goal || 'Geral', deadline: null, event: motive || null }
+    },
+    state_today: {
+      energy: stateToday?.energy || 'normal',
+      sleep_hours: parseInt(stateToday?.sleep_hours) || 7,
+      stress: stateToday?.stress || 'normal',
+      days_since_rest: stateToday?.days_since_rest || 1
+    },
+    training_history: {
+      last_session: lastSession || {
+        date: new Date().toISOString().split('T')[0],
+        muscle_groups: [],
+        rpe_reported: 7,
+        completed: true,
+        notes: 'Primeiro plano — sem histórico anterior.'
+      },
+      weekly_assessment: params.weeklyAssessment || null,
+      current_cycle: { phase: 'indefinida', week: 1, total_weeks: 4 },
+      recent_rm_tests: {}
     }
-  ]
-}`;
-
-  console.log("Multi-Day Plan AI Prompt Executed:\n", prompt);
-
-  // MOCKING the AI response based on the strict prompt instructions
-  const sessions = [];
-  let workoutCount = 0;
-
-  const goalMap = {
-    'f_loss': { rm: '60-70% RM', sets: '3-4', reps: '12-15', rest: '60s', title: 'Queima Avançada' },
-    'm_gain': { rm: '75-85% RM', sets: '4', reps: '8-12', rest: '90s', title: 'Hipertrofia Dinâmica' },
-    'strength': { rm: '85-95% RM', sets: '5', reps: '3-5', rest: '120s', title: 'Força Pura' },
-    'endur': { rm: '50-60% RM', sets: '3', reps: '15-20', rest: '30s', title: 'Condicionamento' },
-    'well': { rm: '60-75% RM', sets: '3', reps: '10-12', rest: '60s', title: 'Funcional' }
   };
-  const g = goalMap[goal] || goalMap['well'];
 
-  // Adjust splits based on selected type
-  let splitMap = [];
-  if (type === 'calistenia') {
-    splitMap = [
-      { focus: 'Push Avançado (P. Corporal)', ex: ['Flexões Diamante', 'Pike Push-ups', 'Dips Estritos', 'Prancha'] },
-      { focus: 'Pull & Core (P. Corporal)', ex: ['Elevações (Pull-ups)', 'Australianas', 'L-Sit Hold', 'Toe-to-bar'] },
-      { focus: 'Pernas & Pliometria', ex: ['Pistol Squats', 'Jumping Lunges', 'Tuck Jumps', 'Agachamento Isométrico'] }
-    ];
-  } else if (type === 'hyrox') {
-    splitMap = [
-      { focus: 'Simulação Hyrox 1', ex: ['Corrida 1km', 'SkiErg 1000m', 'Corrida 1km', 'Sled Push 50m'] },
-      { focus: 'Simulação Hyrox 2', ex: ['Corrida 1km', 'Rowing 1000m', 'Corrida 1km', 'Farmers Carry 200m'] },
-      { focus: 'Força Estacionária', ex: ['Wall Balls', 'Sandbag Lunges', 'Burpee Broad Jumps', 'Remada Pesada'] }
-    ];
-  } else {
-    splitMap = [
-      { focus: 'Peito, Ombros e Triceps', ex: ['Supino', 'Press Militar', 'Crucifixo', 'Extensão Tricep'] },
-      { focus: 'Pernas, Glúteos e Core', ex: ['Agachamento', 'Leg Press', 'Lunge', 'Romanian Deadlift'] },
-      { focus: 'Costas, Biceps e Posterior', ex: ['Elevações', 'Remada', 'Bicep Curl', 'Face Pulls'] },
-      { focus: 'Metcon Condicionamento', ex: ['Burpees', 'Kettlebell Swings', 'Box Jumps', 'Wall Balls'] }
-    ];
-  }
+  const planConfig = {
+    totalDays,
+    goal: goal || 'Geral',
+    level: level || 'iniciante',
+    exigency: exigency || 'normal',
+    trainingDaysPerWeek: parseInt(freq) || 3,
+    environment,
+    equipment,
+    limitations: limitations || 'Nenhuma',
+    motive: motive || 'Nenhum',
+    cyclePhase: 'indefinida',
+    session_duration: session_duration || 60,
+    history: history || []
+  };
 
-  for (let i = 1; i <= totalDays; i++) {
-    const shouldRest = (workoutCount >= trainingDaysPerWeek && i <= 7)
-      || (i % Math.ceil(7 / (7 - trainingDaysPerWeek)) === 0 && workoutCount > 0);
-
-    if (shouldRest || workoutCount >= (trainingDaysPerWeek * (totalDays / 7))) {
-      let restMsg = 'A recuperação não é opcional, é onde o músculo cresce. Faz uma caminhada de 30 min, mobilidade leve e hidrata-te.';
-      if (exigency === 'extrema') restMsg = 'O corpo de elite precisa de pausa. Faz gelo, liberta as fascias com rolo e foca na visualização da tua prova.';
-      if (type === 'hyrox') restMsg = 'Hyrox desgasta brutalmente o sistema nervoso central. Faz rolo nos gémeos e isquiotibiais. Yoga ou natação ligeira hoje.';
-
-      sessions.push({
-        day: i,
-        focus: 'Dia de Descanso / Recuperação',
-        duration: '-',
-        rest_justification: restMsg,
-        exercises: []
-      });
-    } else {
-      const split = splitMap[workoutCount % splitMap.length];
-      const isExtreme = exigency === 'extrema';
-      const durationStr = isExtreme ? 'Manhã: 60min | Tarde: 60min' : '45-60 min';
-      const focusPrefix = isExtreme ? '[BI-DIÁRIO ELITE] ' : '';
-
-      const mainExercises = split.ex.map(e => ({
-        phase: 'main',
-        name: e,
-        sets: isExtreme ? (parseInt(g.sets) + 2).toString() : g.sets,
-        reps: g.reps,
-        rest: g.rest,
-        weight_h: type === 'calistenia' || e.includes('Corrida') || e.includes('Ski') ? '-' : g.rm,
-        weight_m: type === 'calistenia' || e.includes('Corrida') || e.includes('Ski') ? '-' : g.rm,
-        adaptation: e === 'Leg Press' && environment === 'casa' ? 'Substituir por Agachamento com Elástico ou Lunge Búlgaro se não houver máquina.' : 
-                   e === 'Remada' && environment === 'casa' ? 'Usar elásticos ou remada curvada com halteres/garrafas.' : '',
-        rm_percent: type === 'calistenia' || e.includes('Corrida') || e.includes('Ski') ? '-' : g.rm
-      }));
-
-      const getWarmupExercises = (focus) => {
-        const warmupMap = {
-          'Peito': [
-            { phase: 'warmup', name: 'Mobilidade de Ombro (Passagens c/ Elástico)', sets: '1', reps: '15', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Escápulas no Chão (Floor Slides)', sets: '2', reps: '12', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Flexões de Braços Ligeiras', sets: '2', reps: '10', rest: '30s', rm_percent: '-' }
-          ],
-          'Pernas': [
-            { phase: 'warmup', name: 'Mobilidade de Anca (Spiderman Stretch)', sets: '1', reps: '10/lado', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Cossack Squats (Mobilidade Lateral)', sets: '2', reps: '12', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Agachamentos Globais (Pausados)', sets: '2', reps: '10', rest: '30s', rm_percent: '-' }
-          ],
-          'Costas': [
-            { phase: 'warmup', name: 'Cat-Cow (Mobilidade de Coluna)', sets: '1', reps: '12', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Mobilidade Torácica (Rotação)', sets: '2', reps: '10/lado', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Scapular Pull-ups / Remada Invertida Ligeira', sets: '2', reps: '10', rest: '30s', rm_percent: '-' }
-          ],
-          'Metcon': [
-            { phase: 'warmup', name: 'Corrida Ligeira / Jumping Jacks', sets: '1', reps: '3 min', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Inchworms (Caminhada de Mãos)', sets: '2', reps: '8', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Burpees em câmara lenta', sets: '2', reps: '5', rest: '30s', rm_percent: '-' }
-          ],
-          'Calistenia': [
-            { phase: 'warmup', name: 'Rotação de Pulsos e Cotovelos', sets: '1', reps: '1 min', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Prancha Abdominal Dinâmica', sets: '2', reps: '45s', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Escápulas em suspensão (Active Hang)', sets: '2', reps: '30s', rest: '30s', rm_percent: '-' }
-          ],
-          'Hyrox': [
-            { phase: 'warmup', name: 'Corrida com joelhos altos', sets: '1', reps: '2 min', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Lunges Dinâmicos', sets: '2', reps: '12', rest: '-', rm_percent: '-' },
-            { phase: 'warmup', name: 'Air Squats rápidos', sets: '2', reps: '15', rest: '30s', rm_percent: '-' }
-          ]
-        };
-
-        const key = Object.keys(warmupMap).find(k => focus.toLowerCase().includes(k.toLowerCase())) || 'Metcon';
-        return warmupMap[key];
+  try {
+    // ── Fase B: DECISAO — Treinador analisa o contexto ─────────────────────────
+    console.log(`[AI V3.0] Treinador a decidir... (energia: ${athleteProfile.state_today.energy}, sono: ${athleteProfile.state_today.sleep_hours}h, dias desde descanso: ${athleteProfile.state_today.days_since_rest})`);
+    let decision;
+    try {
+      decision = await callGeminiAdapter(
+        baseUrl, apiKey,
+        PROMPTS.DECISAO.system,
+        PROMPTS.DECISAO.user(athleteProfile),
+        model
+      );
+      console.log(`[AI V3.0] Decisão: should_train=${decision.should_train}, intensity=${decision.intensity_modifier}, volume=${decision.volume_modifier}`);
+    } catch (decisionErr) {
+      console.warn('[AI V3.0] DECISAO falhou, a usar defaults:', decisionErr.message);
+      decision = {
+        should_train: true,
+        intensity_modifier: 1.0,
+        volume_modifier: 1.0,
+        recommended_focus: [],
+        forbidden_groups: [],
+        phase_guidelines: { sets: '4', rep_range: '8-12', intensity_range: '65-75% RM' },
+        coaching_note: 'Treino normal com base no perfil definido.'
       };
-
-      const warmUp = getWarmupExercises(split.focus);
-
-      const coolDown = [
-        { phase: 'cooldown', name: 'Alongamentos Estáticos Gerais', sets: '1', reps: '5 min', rest: '-', rm_percent: '-' }
-      ];
-
-      sessions.push({
-        day: i,
-        focus: focusPrefix + split.focus,
-        duration: durationStr,
-        exercises: [...warmUp, ...mainExercises, ...coolDown]
-      });
-      workoutCount++;
     }
-  }
 
-  return {
-    title: `Plano ${type ? type.toUpperCase() : g.title} - ${level.toUpperCase()}`,
-    limitationsConsidered: limitations && limitations.length > 3 ? `Adaptações Ativas: Todos os exercícios de carga e impacto foram ajustados para proteger: ${limitations}. Se sentires desconforto, reduz a amplitude.` : 'Nenhuma limitação reportada. Avança com segurança.',
-    period: totalDays + ' Dias',
-    sessions: sessions
-  };
+    // Injetar decisão no planConfig
+    planConfig.coachingDecision = decision;
+    planConfig.cyclePhase = decision.phase_guidelines ? 'indefinida' : 'indefinida';
+
+    // ── Fase C: PLANO — Gera 7 dias com contexto da decisão ────────────────────
+    console.log(`[AI V3.0] A gerar Plano ${modality.toUpperCase()} (${totalDays} dias)...`);
+    const parsed = await callGeminiAdapter(
+      baseUrl, apiKey,
+      PROMPTS.PLANO.system(modality),
+      PROMPTS.PLANO.user(planConfig, modality),
+      model
+    );
+
+    const planLevel = level || 'iniciante';
+    const coachNote = decision.coaching_note || '';
+
+    return {
+      title: `Plano ${modality.toUpperCase()} - ${planLevel.toUpperCase()}`,
+      limitationsConsidered: `${coachNote} | Lógica: ${parsed.plan_meta?.programming_logic || 'IA V3.0'}`,
+      period: `${parsed.plan_meta?.total_days || totalDays} Dias`,
+      coachingDecision: decision,
+      sessions: (parsed.days || parsed.sessions || []).map(d => ({
+        day: d.day,
+        focus: d.focus || (d.type === 'rest' ? 'Descanso Ativo' : 'Treino'),
+        duration: d.session_duration_minutes ? `${d.session_duration_minutes} min` : '-',
+        warmup: d.warmup || null,
+        cooldown: d.cooldown || null,
+        rest_justification: d.rest_justification || '',
+        exercises: (d.exercises || []).map((ex, idx) => ({
+          phase: 'main',
+          name: ex.name,
+          sets: ex.sets || 1,
+          reps: ex.reps || '10',
+          rest: ex.rest_seconds ? `${ex.rest_seconds}s` : '0s',
+          weight_h: ex.weight_rx || '-',
+          weight_m: ex.weight_scaled || '-',
+          adaptation: ex.adaptation || '',
+          rm_percent: ex.weight_scaled || '-',
+          safety_notes: ex.safety_notes || '',
+          order: idx + 1
+        }))
+      }))
+    };
+  } catch (err) {
+    console.error('[AI V3.0 Multi-Day] Generation failed:', err.message);
+    throw err;
+  }
 };
 
 /**
@@ -669,4 +625,76 @@ function extractFromDescription(text) {
   return exercises;
 }
 
-module.exports = { generateWithAI, testConnection, generateMultiDayPlan, parseWorkoutText };
+/**
+ * Generate a single WOD based on a conversational prompt.
+ */
+/**
+ * Generate a single WOD based on a conversational prompt using V3.0 Prompts.
+ */
+async function generateWod(prompt, goal = 'Daily WOD') {
+  const { baseUrl, apiKey, model } = resolveProvider('pollinations', null);
+  const modality = 'crossfit';
+  const wodConfig = {
+    prompt,
+    goal,
+    duration: 20,
+    level: 'intermédio',
+    equipment: ['barbell', 'kettlebell', 'pull-up bar', 'rower', 'bike', 'rings']
+  };
+
+  try {
+    console.log(`[AI V3.0] Generating WOD...`);
+    const parsed = await callGeminiAdapter(
+      baseUrl, apiKey,
+      PROMPTS.WOD_UNICO.system(modality),
+      PROMPTS.WOD_UNICO.user(wodConfig)
+    );
+    
+    return {
+      title: parsed.title || 'WOD do Dia',
+      warmup: `[${parsed.warmup?.duration_minutes || 10} min] ${parsed.warmup?.description || ''}`,
+      workout: `Formato: ${parsed.format}\nCap: ${parsed.time_cap}\nEstímulo: ${parsed.stimulus}\n\nRX: ${parsed.workout?.rx}\n\nSCALED: ${parsed.workout?.scaled}\n\nDica Coach: ${parsed.coaching_tip}`
+    };
+  } catch (err) {
+    console.error('[AI V3.0 WOD] Error:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Generate a multi-day Box WOD plan using V3.0 Prompts.
+ */
+async function generateBoxWodPlan(prompt, days = 5) {
+  const { baseUrl, apiKey, model } = resolveProvider('pollinations', null);
+  const modality = 'crossfit';
+  const weekConfig = {
+    prompt,
+    days,
+    level: 'intermédio',
+    equipment: ['barbell', 'kettlebell', 'pull-up bar', 'rower', 'bike', 'rings', 'wall balls', 'box']
+  };
+
+  try {
+    console.log(`[AI V3.0] Generating Weekly Box WOD Plan (${days} days)...`);
+    const parsed = await callGeminiAdapter(
+      baseUrl, apiKey,
+      PROMPTS.WOD_SEMANA.system(modality),
+      PROMPTS.WOD_SEMANA.user(weekConfig)
+    );
+    
+    // Ensure we return an array matching the frontend expectations
+    const wodsArray = (parsed.wods || []).map(wod => ({
+      title: wod.title || 'WOD do Dia',
+      stimulus: wod.stimulus || 'Misto',
+      warmup: `[${wod.warmup?.duration_minutes || 10} min] ${wod.warmup?.description || ''}`,
+      workout: `Formato: ${wod.format}\nCap: ${wod.time_cap}\n\nRX: ${wod.workout?.rx}\n\nSCALED: ${wod.workout?.scaled}\n\nDica Coach: ${wod.coaching_tip}`
+    }));
+
+    return wodsArray;
+  } catch (err) {
+    console.error('[AI V3.0 Weekly Plan] Error:', err.message);
+    throw err;
+  }
+}
+
+module.exports = { generateWithAI, testConnection, generateMultiDayPlan, parseWorkoutText, generateWod, generateBoxWodPlan, callGeminiAdapter };

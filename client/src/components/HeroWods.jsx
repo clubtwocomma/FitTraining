@@ -3,7 +3,7 @@ import { Medal, ChevronRight, Award } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import ShareMenu from './ShareMenu'
 
-export default function HeroWods() {
+export default function HeroWods({ onStartWorkout }) {
     const [heroes, setHeroes] = useState([])
     const [selectedHero, setSelectedHero] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -232,8 +232,24 @@ export default function HeroWods() {
                                 </div>
                             )}
 
-                            <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#2563eb' }} onClick={() => window.print()}>
+                             <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                <button 
+                                    className="btn btn-primary" 
+                                    style={{ flex: 2, minWidth: '200px', background: '#2563eb', height: '60px', fontSize: '1.1rem' }} 
+                                    onClick={() => onStartWorkout({
+                                        globalWodId: selectedHero.id,
+                                        exercises: selectedHero.workout,
+                                        duration: selectedHero.amrap || 20,
+                                        focus: selectedHero.name,
+                                        summary: {
+                                            structure: selectedHero.rounds ? `${selectedHero.rounds} Rounds` : (selectedHero.amrap ? `AMRAP ${selectedHero.amrap}min` : 'For Time'),
+                                            type: 'Hero WOD'
+                                        }
+                                    })}
+                                >
+                                    Fazer Treino
+                                </button>
+                                <button className="btn btn-primary" style={{ flex: 1, minWidth: '160px', background: '#1e40af', height: '60px' }} onClick={() => window.print()}>
                                     Exportar PDF
                                 </button>
                                 <ShareMenu wod={selectedHero} type="hero" accent="#2563eb" variant="light" />

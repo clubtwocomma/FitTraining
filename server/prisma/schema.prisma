@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
@@ -11,114 +8,124 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN       // Global Admin
-  BOX_ADMIN   // Box Manager
-  COACH       // Box Coach
-  ATHLETE     // Regular User
-}
-
 model Box {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String
   location    String?
   description String?
-  inviteCode  String    @unique // To allow athletes to join
-  adminId     Int       // The user who created/owns the box
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  users       User[]
-  classes     GymClass[]
+  inviteCode  String     @unique
+  adminId     Int
+  approved    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   wods        BoxWod[]
+  classes     GymClass[]
+  users       User[]
 
   @@index([inviteCode])
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  password     String
-  name         String
-  role         Role      @default(ATHLETE)
-  profile      Json?     // Stores gender, level, equipment, etc.
-  boxId        Int?      // Nullable for "register without box"
-  boxValidated Boolean   @default(false) // Manager must validate athlete
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  box          Box?      @relation(fields: [boxId], references: [id])
-  bookings     Booking[]
-  results      Result[]
-  plans        UserPlan[]
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  name           String
+  role           Role            @default(ATHLETE)
+  profile        Json?
+  boxId          Int?
+  boxValidated   Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  avatarUrl      String?
+  memberStatus   MemberStatus    @default(ACTIVE)
+  phone          String?
+  resetToken     String?
+  resetTokenExpiry DateTime?
+  bookings       Booking[]
   customWorkouts CustomWorkout[]
+  taughtClasses  GymClass[]      @relation("ClassCoach")
+  results        Result[]
+  box            Box?            @relation(fields: [boxId], references: [id])
+  plans          UserPlan[]
+  notifications  Notification[]
 
   @@index([boxId])
   @@index([email])
 }
 
-model UserPlan {
+model Notification {
   id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String    // booking_new | booking_cancel | waitlist_promoted | class_cancelled | athlete_joined
+  message   String
+  classId   Int?
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model UserPlan {
+  id        Int                @id @default(autoincrement())
   userId    Int
   title     String
   goal      String?
-  startDate DateTime  @default(now())
+  startDate DateTime           @default(now())
   endDate   DateTime?
-  active    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-
-  user      User      @relation(fields: [userId], references: [id])
+  active    Boolean            @default(true)
+  createdAt DateTime           @default(now())
   workouts  ScheduledWorkout[]
+  coachingInsights Json?
+  user      User               @relation(fields: [userId], references: [id])
 }
 
 model ScheduledWorkout {
   id        Int       @id @default(autoincrement())
   planId    Int
-  day       Int       // Day number in the plan (1, 2, 3...)
-  date      DateTime? // Actual calendar date
+  day       Int
+  date      DateTime?
   focus     String
-  content   Json      // Exercises, sets, reps, etc.
+  content   Json
   completed Boolean   @default(false)
   createdAt DateTime  @default(now())
-
-  plan      UserPlan  @relation(fields: [planId], references: [id])
   results   Result[]
+  plan      UserPlan  @relation(fields: [planId], references: [id])
 }
 
 model BoxWod {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   boxId     Int
-  date      DateTime  @default(now())
+  date      DateTime @default(now())
   title     String
-  content   Json      // Stores warmup, main, cooldown
-  stimulus  String?   
-  createdAt DateTime  @default(now())
-  
-  box       Box       @relation(fields: [boxId], references: [id])
+  content   Json
+  stimulus  String?
+  scoreType ScoreType @default(REPS)
+  createdAt DateTime @default(now())
+  box       Box      @relation(fields: [boxId], references: [id])
   results   Result[]
 
   @@index([boxId, date])
 }
 
-// Global Benchmark WODs (Heroes, Girls, Painstorms)
 model GlobalWod {
-  id          Int       @id @default(autoincrement())
-  slug        String    @unique  // e.g. "fran", "murph", "painstorm-1"
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
   name        String
-  wodType     String    // "girl" | "hero" | "painstorm"
+  wodType     String
   description String
   stimulus    String?
-  workout     Json      // Array de {name, reps, weight_h?, weight_m?, duration?}
+  workout     Json
   rounds      Int?
   amrap       Int?
-  honor       String?   // Para Hero WODs: nome da pessoa homenageada
-  createdAt   DateTime  @default(now())
+  honor       String?
+  scoreType   ScoreType @default(REPS)
+  createdAt   DateTime @default(now())
   results     Result[]
 
   @@index([wodType])
 }
 
-// Custom Workouts per-user (previously a shared JSON file — bug fixed!)
 model CustomWorkout {
   id        String   @id @default(cuid())
   userId    Int
@@ -130,56 +137,72 @@ model CustomWorkout {
   structure String?
   aiNotes   String?
   createdAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
 
 model GymClass {
-  id        Int       @id @default(autoincrement())
-  boxId     Int
-  name      String?   // e.g., "WOD", "Open Box", "Pilates"
-  startTime DateTime
-  endTime   DateTime?
-  capacity  Int       @default(12)
-  createdAt DateTime  @default(now())
-
-  box       Box       @relation(fields: [boxId], references: [id])
-  bookings  Booking[]
+  id                  Int       @id @default(autoincrement())
+  boxId               Int
+  name                String?
+  startTime           DateTime
+  endTime             DateTime?
+  capacity            Int       @default(12)
+  createdAt           DateTime  @default(now())
+  cancelDeadlineHours Int       @default(2)
+  coachId             Int?
+  cancelledAt         DateTime?
+  location            String?
+  seriesId            String?
+  bookings            Booking[]
+  box                 Box       @relation(fields: [boxId], references: [id])
+  coach               User?     @relation("ClassCoach", fields: [coachId], references: [id])
 
   @@index([boxId, startTime])
+  @@index([coachId])
+  @@index([seriesId])
 }
 
 model Booking {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  classId      Int
-  status       String    @default("CONFIRMED") // CONFIRMED, CANCELLED
-  registeredAt DateTime  @default(now())
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  classId          Int
+  status           String    @default("CONFIRMED")
+  registeredAt     DateTime  @default(now())
+  checkInAt        DateTime?
+  waitlistPosition Int?
+  gymClass         GymClass  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id])
 
-  user         User      @relation(fields: [userId], references: [id])
-  gymClass     GymClass  @relation(fields: [classId], references: [id])
-
+  @@unique([userId, classId])
   @@index([userId, registeredAt])
   @@index([classId])
+}
+
+enum ScoreType {
+  TIME
+  WEIGHT
+  REPS
+  WEIGHT_AND_TIME
+  OTHER
 }
 
 model Result {
   id                 Int               @id @default(autoincrement())
   userId             Int
-  boxWodId           Int?              
+  boxWodId           Int?
   globalWodId        Int?
-  scheduledWorkoutId Int?              
-  score              String            
-  type               String            // RX or Scaled
-  notes              String?           
+  scheduledWorkoutId Int?
+  score              String
+  scoreValue         Float?
+  type               String
+  notes              String?
   createdAt          DateTime          @default(now())
-
-  user               User              @relation(fields: [userId], references: [id])
   boxWod             BoxWod?           @relation(fields: [boxWodId], references: [id])
   globalWod          GlobalWod?        @relation(fields: [globalWodId], references: [id])
   scheduledWorkout   ScheduledWorkout? @relation(fields: [scheduledWorkoutId], references: [id])
+  user               User              @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
   @@index([boxWodId])
@@ -189,9 +212,23 @@ model Result {
 model Exercise {
   id           Int      @id @default(autoincrement())
   name         String   @unique
-  muscleGroups Json     
-  equipment    Json     
-  type         Json   
-  source       String?  
+  muscleGroups Json
+  equipment    Json
+  type         Json
+  source       String?
   createdAt    DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  BOX_ADMIN
+  COACH
+  ATHLETE
+}
+
+enum MemberStatus {
+  LEAD
+  ACTIVE
+  SUSPENDED
+  FORMER
 }

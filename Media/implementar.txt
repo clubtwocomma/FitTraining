@@ -1,0 +1,125 @@
+1CONTEXTO
+A app FitTraining é uma SPA React + Node.js/Express + PostgreSQL/Prisma. A auditoria já foi feita. Vamos agora implementar a Fase 1 — Gestão de Aulas (painel de administração).
+Não quebres nada do que já existe. Lê o código atual antes de modificar qualquer ficheiro.
+
+OBJETIVO DESTA FASE
+Criar um painel de administração completo para gerir aulas — visível apenas para utilizadores com role BOX_ADMIN ou COACH. O painel deve permitir criar, editar, cancelar e visualizar aulas num mapa semanal, bem como gerir inscrições e check-ins dos atletas.
+
+PASSO 1 — SCHEMA (Prisma)
+Modifica server/prisma/schema.prisma com as seguintes alterações:
+
+Em GymClass, adiciona:
+
+coachId — relação opcional com User (role COACH)
+location — campo texto (nome do espaço/sala, ex: "Sala A")
+cancelledAt — DateTime opcional
+
+
+Em Booking, altera o enum de estado para incluir: CONFIRMED, WAITLISTED, CANCELLED
+
+Adiciona checkInAt — DateTime opcional (momento do check-in)
+Adiciona waitlistPosition — Int opcional (posição na lista de espera)
+
+
+Cria o enum MemberStatus: ACTIVE, SUSPENDED, FORMER, LEAD
+
+Adiciona memberStatus ao modelo User, default ACTIVE
+
+
+
+Após alterar o schema, corre a migration: npx prisma migrate dev --name fase1_aulas
+
+PASSO 2 — ENDPOINTS (server/server.js)
+Cria ou modifica os seguintes endpoints, todos protegidos por autenticação e com verificação de role BOX_ADMIN ou COACH:
+GET    /api/boxes/:boxId/schedule/week?date=YYYY-MM-DD
+       → devolve todas as aulas da semana da data indicada,
+         com campos: id, name, date, startTime, endTime,
+         capacity, location, coach (nome), totalBooked, totalWaitlisted
+
+POST   /api/admin/classes
+       → cria uma nova aula
+       body: { name, date, startTime, endTime, capacity, location, coachId, boxId }
+
+PATCH  /api/admin/classes/:id
+       → edita uma aula existente (mesmos campos do POST)
+
+DELETE /api/admin/classes/:id
+       → cancela uma aula (set cancelledAt = now)
+         se houver inscrições CONFIRMED, notifica (por agora apenas log no servidor)
+
+GET    /api/admin/classes/:id/bookings
+       → lista de inscrições da aula: atleta (nome, email), estado, checkInAt, waitlistPosition
+
+PATCH  /api/admin/bookings/:id/checkin
+       → regista check-in de um atleta (set checkInAt = now)
+         se o atleta estava WAITLISTED, promove para CONFIRMED se houver vaga
+
+DELETE /api/admin/bookings/:id
+       → remove inscrição manualmente (admin remove atleta de uma aula)
+         se existir WAITLISTED, promove automaticamente o primeiro da lista
+
+GET    /api/admin/coaches?boxId=:boxId
+       → lista de utilizadores com role COACH na box
+
+PASSO 3 — UI (React)
+3a. Novo componente: client/src/components/admin/ScheduleAdmin.jsx
+Mapa de aulas semanal para administradores:
+
+Grelha com 7 colunas (dias da semana) e linhas por hora (ex: 06:00 às 22:00)
+Cada aula aparece como um card na célula correspondente, mostrando:
+
+Nome da aula
+Coach atribuído
+Vagas: X/Y (X inscritos, Y capacidade total)
+Badge colorido: verde se tem vagas, amarelo se quase cheio (>80%), vermelho se lotado, cinzento se cancelado
+Botões de ação: ✏️ Editar / 🗑 Cancelar
+
+
+Navegação entre semanas (← semana anterior / semana seguinte →)
+Botão "Nova Aula" no topo
+
+3b. Modal: ClassFormModal.jsx
+Formulário para criar/editar aula:
+
+Campos: Nome, Data, Hora início, Hora fim, Capacidade, Sala/Espaço, Coach (dropdown com coaches da box)
+Validação: hora fim > hora início, capacidade > 0
+Botão Guardar / Cancelar
+
+3c. Modal: ClassDetailModal.jsx
+Ao clicar numa aula no mapa, abre modal com:
+
+Detalhes da aula (nome, coach, sala, horário)
+Lista de inscrições com tabs: Confirmados | Lista de espera
+Por cada atleta: nome, hora de inscrição, botão "Check-in" (se não fez) ou badge "✓ Check-in feito" (com hora)
+Botão "Remover da aula" por atleta
+Contador de vagas em tempo real
+
+3d. Integrar no painel existente BoxView.jsx
+
+Adiciona tab ou secção "Gestão de Aulas" visível apenas para BOX_ADMIN e COACH
+Renderiza <ScheduleAdmin /> nessa secção
+
+
+PASSO 4 — LÓGICA DE LISTA DE ESPERA
+Quando um atleta tenta inscrever-se numa aula sem vagas (endpoint existente POST /api/bookings):
+
+Em vez de devolver erro, cria o booking com estado WAITLISTED e waitlistPosition = (último da lista + 1)
+Quando uma inscrição CONFIRMED é cancelada ou removida, promove automaticamente o primeiro WAITLISTED para CONFIRMED
+
+
+VERIFICAÇÃO FINAL
+Após implementar, confirma:
+
+ ./restart.sh corre sem erros
+ Um BOX_ADMIN consegue ver o mapa semanal
+ Consegue criar uma aula nova no modal
+ Consegue ver os inscritos e fazer check-in
+ Um utilizador com role MEMBER não vê a secção de administração
+ O BoxView existente continua a funcionar normalmente
+
+
+ENTREGÁVEIS NO FIM
+
+Lista dos ficheiros criados e modificados
+Backlog atualizado (o que falta para as Fases 2, 3 e 4)
+Eventuais decisões de arquitetura que precisem de validação
