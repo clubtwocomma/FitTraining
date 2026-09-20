@@ -1,5 +1,0 @@
-◇ injecting env (3) from .env // tip: ⌘ suppress logs { quiet: true }
-[Static] Serving from /home/rjafreitas/.openclaw/workspace/FitTraining/server/public
-❌ PORTA 8510 OCUPADA!
-   Não é possível iniciar o servidor na porta 8510.
-   Corre 'fuser -k 8510/tcp' para libertar o porto.

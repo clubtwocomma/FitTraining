@@ -17,3 +17,17 @@ server/public/
 postgres_data/
 server/prisma/dev.db
 server/prisma/dev.db-journal
+
+# logs & artefactos locais
+*.log
+*.bak.*
+mock_token.db
+check.json
+
+# env local do docker compose (raiz)
+.env.*
+!.env.example
+
+# scripts de teste locais
+test-logic.js
+scratch/
