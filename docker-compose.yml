@@ -1,13 +1,18 @@
 version: "3.9"
+
+# Segredos NÃO são versionados: define-os num ficheiro .env na raiz do projeto
+# (o docker compose lê-o automaticamente). Ver .env.example para o template.
+# A sintaxe ${VAR:?mensagem} faz o compose falhar de imediato se a variável
+# estiver em falta, em vez de arrancar com um valor por defeito inseguro.
 services:
   db:
     image: postgres:16
     container_name: fittraining_db
     restart: always
     environment:
-      POSTGRES_DB: fittraining
-      POSTGRES_USER: fittraining_user
-      POSTGRES_PASSWORD: fittraining_password
+      POSTGRES_DB: ${POSTGRES_DB:-fittraining}
+      POSTGRES_USER: ${POSTGRES_USER:?define POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD no .env}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     ports:
@@ -20,8 +25,10 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql://fittraining_user:fittraining_password@db:5432/fittraining?schema=public
-      - JWT_SECRET=fittraining_super_secret_jwt
-      - PORT=8510
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fittraining}?schema=public
+      - JWT_SECRET=${JWT_SECRET:?define JWT_SECRET no .env}
+      - PORT=${PORT:-8510}
+      - POLLINATIONS_API_KEY=${POLLINATIONS_API_KEY:?define POLLINATIONS_API_KEY no .env}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
     ports:
-      - "8510:8510"
+      - "${PORT:-8510}:${PORT:-8510}"

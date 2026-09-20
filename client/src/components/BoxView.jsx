@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Award, Plus, Trash2, CheckCircle2, Clock, MapPin, ChevronRight, ChevronLeft, Play, QrCode, UserCheck, XCircle, Settings, Edit2, Copy, Share, Flame, Sparkles } from 'lucide-react';
+import { Calendar, Users, Award, Plus, Trash2, CheckCircle2, Clock, MapPin, ChevronRight, ChevronLeft, Play, QrCode, UserCheck, XCircle, Settings, Edit2, Copy, Share, Flame, Sparkles, Tv2 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import ScheduleAdmin from './admin/ScheduleAdmin';
+import AirPlayView from './AirPlayView';
 
 const MonthCalendar = ({ selectedDate, onDateSelect }) => {
     const [viewDate, setViewDate] = useState(new Date(selectedDate));
@@ -437,6 +438,7 @@ const MemberSchedule = ({ classes, user, bookingLoading, handleBooking }) => {
 
 const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }) => {
     const todayWod = wods[0];
+    const [airPlayData, setAirPlayData] = useState(null);
     const [results, setResults] = useState([]);
     const [score, setScore] = useState('');
     const [type, setType] = useState('RX');
@@ -447,6 +449,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
     const [title, setTitle] = useState('');
     const [stimulus, setStimulus] = useState('');
     const [warmup, setWarmup] = useState('');
+    const [skill, setSkill] = useState('');
     const [mainWorkout, setMainWorkout] = useState('');
     const [cooldown, setCooldown] = useState('');
     const [scoreType, setScoreType] = useState('REPS');
@@ -504,7 +507,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
                     title, stimulus,
                     date: dateStr,
                     scoreType,
-                    content: { warmup, main: mainWorkout, cooldown }
+                    content: { warmup, skill, main: mainWorkout, cooldown }
                 })
             });
             if (res.ok) {
@@ -528,20 +531,18 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
             return;
         }
         setAiLoading(true);
-        console.log("Starting AI generation with prompt:", aiPrompt);
         try {
             const res = await apiFetch('/generate-workout', {
                 method: 'POST',
                 body: JSON.stringify({ prompt: aiPrompt, goal: 'Box Daily WOD' })
             });
-            console.log("AI response status:", res.status);
             const data = await res.json();
-            console.log("AI response data:", data);
             if (res.ok && data.workout) {
                 setMainWorkout(data.workout);
                 if (data.warmup) setWarmup(data.warmup);
+                if (data.skill) setSkill(data.skill);
                 if (data.title) setTitle(data.title);
-                alert('WOD gerado com sucesso!');
+                alert('WOD gerado com sucesso! Skill/Força incluídos.');
             } else {
                 alert(data.error || 'Erro ao gerar treino.');
             }
@@ -598,6 +599,11 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
     };
 
     return (
+        <>
+        {airPlayData && (
+            <AirPlayView data={airPlayData} onClose={() => setAirPlayData(null)} />
+        )}
+
         <div className="wod-display animate-slide-up">
             {isCoach && (
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
@@ -681,8 +687,18 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
                         </div>
                         <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Título (ex: Fran)" className="form-input" />
                         <input type="text" value={stimulus} onChange={e => setStimulus(e.target.value)} placeholder="Estímulo (ex: Sprint)" className="form-input" />
-                        <textarea rows="2" value={warmup} onChange={e => setWarmup(e.target.value)} placeholder="Warm-up" className="form-input"></textarea>
-                        <textarea rows="4" value={mainWorkout} onChange={e => setMainWorkout(e.target.value)} required placeholder="WOD Content" className="form-input"></textarea>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 900, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1px' }}>🔥 Warmup</label>
+                            <textarea rows="2" value={warmup} onChange={e => setWarmup(e.target.value)} placeholder="Aquecimento (ex: 10 min mobilidade + ativação)" className="form-input" style={{ borderLeft: '3px solid #f59e0b' }}></textarea>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 900, color: '#8b5cf6', textTransform: 'uppercase', letterSpacing: '1px' }}>💪 Skill / Força</label>
+                            <textarea rows="3" value={skill} onChange={e => setSkill(e.target.value)} placeholder="Ex: [Força] Back Squat — 5x3 @ 80% RM" className="form-input" style={{ borderLeft: '3px solid #8b5cf6' }}></textarea>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 900, color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚡ WOD Principal</label>
+                            <textarea rows="4" value={mainWorkout} onChange={e => setMainWorkout(e.target.value)} required placeholder="WOD Content" className="form-input" style={{ borderLeft: '3px solid var(--primary-color)' }}></textarea>
+                        </div>
                         
                         <div className="input-group-v2">
                             <label style={{ fontSize: '0.8rem', fontWeight: 900, color: '#64748b' }}>TIPO DE PONTUAÇÃO</label>
@@ -711,28 +727,86 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
                 </div>
             ) : (
                 <>
+                    {/* ── Hero Header ── */}
                     <div className="premium-card" style={{ padding: '0', overflow: 'hidden', background: 'white', marginBottom: '2rem' }}>
-                        <div style={{ padding: '2.5rem 2rem', background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)', color: 'white', textAlign: 'center' }}>
+                        <div style={{ padding: '2.5rem 2rem', background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)', color: 'white', textAlign: 'center', position: 'relative' }}>
+                            <button
+                                onClick={() => setAirPlayData({ boxWod: true, title: todayWod.title, stimulus: todayWod.stimulus, content: todayWod.content || {} })}
+                                title="Transmitir para TV via AirPlay"
+                                style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '0.75rem', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}
+                            >
+                                <Tv2 size={16} /> AirPlay
+                            </button>
                             <Award size={40} style={{ marginBottom: '1rem', opacity: 0.8 }} />
                             <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 900, lineHeight: 1.2 }}>{todayWod.title}</h2>
-                            <div style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', borderRadius: '2rem', background: 'rgba(255,255,255,0.2)', display: 'inline-block', fontWeight: 800 }}>
-                                {todayWod.stimulus}
-                            </div>
+                            {todayWod.stimulus && (
+                                <div style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', borderRadius: '2rem', background: 'rgba(255,255,255,0.2)', display: 'inline-block', fontWeight: 800 }}>
+                                    {todayWod.stimulus}
+                                </div>
+                            )}
                         </div>
 
-                        <div style={{ padding: '2.5rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                                {['warmup', 'main', 'cooldown'].map(section => (
-                                    todayWod.content[section] && (
-                                        <div key={section} className="premium-card" style={{ background: '#f8fafc', padding: '1.5rem', border: 'none' }}>
-                                            <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', opacity: 0.5, marginBottom: '1rem' }}>{section}</h4>
-                                            <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                                                {todayWod.content[section]}
-                                            </div>
+                        {/* ── 3-Card Section Grid ── */}
+                        <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                            {/* WARMUP */}
+                            {todayWod.content?.warmup && (
+                                <div style={{ borderRadius: '1.25rem', background: '#fffbeb', border: '1.5px solid #fde68a', overflow: 'hidden' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.5rem', borderBottom: '1px solid #fde68a', background: 'linear-gradient(90deg, #fff7ed, #fffbeb)' }}>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>🔥</div>
+                                        <div>
+                                            <div style={{ fontWeight: 900, fontSize: '0.8rem', color: '#92400e', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Warmup</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#b45309', opacity: 0.8 }}>Aquecimento · Ativação</div>
                                         </div>
-                                    )
-                                ))}
-                            </div>
+                                    </div>
+                                    <div style={{ padding: '1.25rem 1.5rem', whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: '1.8', color: '#78350f' }}>
+                                        {todayWod.content.warmup}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SKILL / FORÇA */}
+                            {todayWod.content?.skill && (
+                                <div style={{ borderRadius: '1.25rem', background: '#faf5ff', border: '1.5px solid #ddd6fe', overflow: 'hidden' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.5rem', borderBottom: '1px solid #ddd6fe', background: 'linear-gradient(90deg, #f5f3ff, #faf5ff)' }}>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>💪</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 900, fontSize: '0.8rem', color: '#4c1d95', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Skill / Força</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#6d28d9', opacity: 0.8 }}>Técnica · Progressão de Carga</div>
+                                        </div>
+                                        {(() => {
+                                            const firstLine = todayWod.content.skill.trim().split('\n')[0] || '';
+                                            const isSkill = /skill/i.test(firstLine);
+                                            const isForce = /for[çc]a/i.test(firstLine);
+                                            const badge = isSkill ? 'SKILL' : isForce ? 'FORÇA' : null;
+                                            return badge ? (
+                                                <span style={{ fontSize: '0.65rem', fontWeight: 900, background: isSkill ? '#ede9fe' : '#e0e7ff', color: isSkill ? '#6d28d9' : '#3730a3', padding: '0.3rem 0.75rem', borderRadius: '2rem', letterSpacing: '1px' }}>{badge}</span>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                    <div style={{ padding: '1.25rem 1.5rem', whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: '1.8', color: '#3b0764' }}>
+                                        {todayWod.content.skill}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* WOD PRINCIPAL */}
+                            {todayWod.content?.main && (
+                                <div style={{ borderRadius: '1.25rem', background: 'var(--primary-glow, #eff6ff)', border: '2px solid var(--primary-color)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(var(--primary-rgb,59,130,246),0.12)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.5rem', borderBottom: '2px solid var(--primary-color)', background: 'linear-gradient(90deg, var(--primary-color), #4f46e5)', color: 'white' }}>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>⚡</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 900, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.9)' }}>WOD</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Workout of the Day · {todayWod.stimulus || 'Alta Intensidade'}</div>
+                                        </div>
+                                        <Flame size={18} style={{ opacity: 0.8 }} />
+                                    </div>
+                                    <div style={{ padding: '1.25rem 1.5rem', whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--text-main)' }}>
+                                        {todayWod.content.main}
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     </div>
 
@@ -788,6 +862,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
                 </>
             )}
         </div>
+        </>
     );
 };
 

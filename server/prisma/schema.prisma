@@ -8,6 +8,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model Box {
   id          Int        @id @default(autoincrement())
   name        String
@@ -210,13 +216,23 @@ model Result {
 }
 
 model Exercise {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  muscleGroups Json
-  equipment    Json
-  type         Json
-  source       String?
-  createdAt    DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  nameEn           String?
+  muscleGroups     Json
+  equipment        Json
+  type             Json
+  category         String?
+  target           String?
+  secondaryMuscles Json?
+  safetyNotes      String?
+  instructionsEn   String?
+  defaultReps      String?  @default("10-12")
+  defaultTime      Int      @default(0)
+  source           String?
+  createdAt        DateTime @default(now())
+
+  @@index([source])
 }
 
 enum Role {

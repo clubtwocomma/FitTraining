@@ -173,6 +173,16 @@ export default function HistoryView({ onBack }) {
                                          } catch (e) {}
                                      }
 
+                                     // Os resultados vindos da TV não têm WOD associado: as notas
+                                     // trazem "Nome do WOD · MODO · detalhe", por isso o primeiro
+                                     // segmento é o nome e o resto é a linha de detalhe (sem repetir
+                                     // o nome já mostrado no título).
+                                     const tvParts = item.type === 'tv_timer' && item.notes
+                                         ? item.notes.split(' · ')
+                                         : null;
+                                     const tvTitle = tvParts ? tvParts[0] : null;
+                                     const detail = tvParts ? tvParts.slice(1).join(' · ') : item.notes;
+
                                      return (
                                          <div key={item.id} className="premium-card history-item" style={{ 
                                              padding: '1.25rem', 
@@ -185,7 +195,7 @@ export default function HistoryView({ onBack }) {
                                                          {new Date(item.createdAt).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}
                                                      </span>
                                                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '0.95rem' }}>
-                                                         {item.boxWod?.title || item.globalWod?.name || item.scheduledWorkout?.focus || 'Treino'}
+                                                         {item.boxWod?.title || item.globalWod?.name || item.scheduledWorkout?.focus || tvTitle || 'Treino'}
                                                      </div>
                                                  </div>
                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
@@ -201,7 +211,7 @@ export default function HistoryView({ onBack }) {
                                                          padding: '2px 6px', 
                                                          borderRadius: '4px' 
                                                      }}>
-                                                         {item.type === 'plan_feedback' ? 'TREINADOR' : item.type}
+                                                         {item.type === 'plan_feedback' ? 'TREINADOR' : item.type === 'tv_timer' ? 'TV' : item.type}
                                                      </span>
                                                  </div>
                                              </div>
@@ -230,9 +240,9 @@ export default function HistoryView({ onBack }) {
                                                          </div>
                                                      )}
                                                  </div>
-                                             ) : item.notes && (
+                                             ) : detail && (
                                                  <div style={{ fontSize: '0.7rem', opacity: 0.4, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
-                                                     {item.notes}
+                                                     {detail}
                                                  </div>
                                              )}
                                          </div>

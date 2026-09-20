@@ -45,6 +45,36 @@
                 </div>
             </header>
 
+            <!-- AI Model Selection -->
+            <div class="glass rounded-3xl p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Modelo de IA (Pollinations.ai)</h2>
+                        <p class="text-slate-400 text-sm font-medium mt-1">Modelo usado por defeito em toda a geração de treinos, planos e WODs. A lista é obtida ao vivo, ordenada do mais barato ao mais caro.</p>
+                    </div>
+                    <button onclick="loadAiModels()" class="p-2 text-slate-400 hover:text-indigo-600 transition-all self-start md:self-center" title="Atualizar lista">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
+                </div>
+                <div class="flex flex-col md:flex-row gap-3 mt-4">
+                    <select id="aiModelSelect" class="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <option value="">A carregar modelos...</option>
+                    </select>
+                    <button onclick="saveAiModel()" class="btn-primary text-white px-8 py-4 rounded-2xl font-bold whitespace-nowrap">Guardar</button>
+                </div>
+                <p id="aiModelInfo" class="text-slate-400 text-xs font-semibold mt-3"></p>
+                <p id="aiModelSaved" class="text-emerald-600 text-xs font-bold mt-2 hidden">✓ Modelo guardado e já ativo em toda a aplicação.</p>
+            </div>
+
+            <!-- AI System Prompts -->
+            <div class="glass rounded-3xl p-6 mb-8">
+                <h2 class="text-xl font-bold text-slate-800">Prompts de IA</h2>
+                <p class="text-slate-400 text-sm font-medium mt-1 mb-5">Instruções de sistema usadas para gerar os planos de treino e os WODs da box. Alterações ficam ativas de imediato, sem reiniciar o servidor.</p>
+                <div id="promptsContainer">
+                    <div class="animate-pulse bg-slate-50 rounded-2xl h-16"></div>
+                </div>
+            </div>
+
             <!-- Main Content -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Box List -->
@@ -155,6 +185,8 @@
             document.getElementById('mainDashboard').style.opacity = '1';
             loadStats();
             loadBoxes();
+            loadAiModels();
+            loadPrompts();
         }
 
         function logout() {
@@ -204,6 +236,183 @@
                         <p class="text-xl font-black text-emerald-600">${data.totalAthletes + (data.totalBoxes || 0)}</p>
                     </div>
                 `;
+            }
+        }
+
+        // --- AI Model Selection ---
+        let aiModelsCache = [];
+
+        function formatPollenPrice(p) {
+            if (p === null || p === undefined) return 'preço desconhecido';
+            if (p < 0.0001) return 'grátis';
+            if (p < 0.01) return `${p.toFixed(6)} pollen/1M`;
+            return `${p.toFixed(2)} pollen/1M`;
+        }
+
+        async function loadAiModels() {
+            const sel = document.getElementById('aiModelSelect');
+            sel.innerHTML = '<option value="">A carregar modelos...</option>';
+
+            const res = await apiFetch('/superadmin/ai-models');
+            if (!res?.ok) {
+                sel.innerHTML = '<option value="">Erro ao carregar modelos</option>';
+                return;
+            }
+            const { models, currentModel } = await res.json();
+            aiModelsCache = models;
+
+            sel.innerHTML = '';
+            const names = new Set(models.map(m => m.name));
+
+            // Preserve the currently-configured model even if the live catalogue no longer lists it
+            if (currentModel && !names.has(currentModel)) {
+                const opt = document.createElement('option');
+                opt.value = currentModel;
+                opt.textContent = `${currentModel} (guardado — já não está na lista da Pollinations)`;
+                sel.appendChild(opt);
+            }
+
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.name;
+                const price = m.free ? 'Grátis' : formatPollenPrice(m.completionPricePerM);
+                const badges = m.reasoning ? ' · Reasoning' : '';
+                opt.textContent = `[${m.brand}] ${m.title} (${m.name}) — ${price}${badges}`;
+                sel.appendChild(opt);
+            });
+
+            if (currentModel) sel.value = currentModel;
+            sel.onchange = updateAiModelInfo;
+            updateAiModelInfo();
+        }
+
+        function updateAiModelInfo() {
+            const sel = document.getElementById('aiModelSelect');
+            const info = document.getElementById('aiModelInfo');
+            const m = aiModelsCache.find(x => x.name === sel.value);
+            if (!m) { info.textContent = `${aiModelsCache.length} modelos de texto disponíveis, ordenados do mais barato ao mais caro.`; return; }
+            info.textContent = `Contexto: ${m.contextLength ? m.contextLength.toLocaleString('pt-PT') + ' tokens' : 'desconhecido'} · Prompt: ${formatPollenPrice(m.promptPricePerM)} · Resposta: ${formatPollenPrice(m.completionPricePerM)}`;
+        }
+
+        async function saveAiModel() {
+            const sel = document.getElementById('aiModelSelect');
+            const model = sel.value;
+            if (!model) return;
+            const savedMsg = document.getElementById('aiModelSaved');
+            savedMsg.classList.add('hidden');
+
+            const res = await apiFetch('/superadmin/ai-model', {
+                method: 'PATCH',
+                body: JSON.stringify({ model })
+            });
+            if (res?.ok) {
+                savedMsg.classList.remove('hidden');
+                setTimeout(() => savedMsg.classList.add('hidden'), 4000);
+            } else {
+                alert('Erro ao guardar o modelo.');
+            }
+        }
+
+        // --- AI System Prompts (Planos & Box WODs) ---
+        function escapeHtml(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function promptId(p) {
+            return `${p.key}__${p.modality || 'default'}`;
+        }
+
+        function badgeClasses(overridden) {
+            return `text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${overridden ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`;
+        }
+
+        function renderPromptItem(p) {
+            const id = promptId(p);
+            const title = p.modalityLabel ? `${p.label} — ${p.modalityLabel}` : p.label;
+            const modalityAttr = p.modality ? `'${p.modality}'` : 'null';
+            return `
+                <details class="bg-white rounded-2xl border border-slate-100 overflow-hidden" ${p.isOverridden ? 'open' : ''}>
+                    <summary class="cursor-pointer p-4 flex items-center justify-between font-bold text-slate-700 hover:bg-slate-50 list-none">
+                        <span>${title}</span>
+                        <span class="${badgeClasses(p.isOverridden)}" id="badge_${id}">${p.isOverridden ? 'Personalizado' : 'Padrão'}</span>
+                    </summary>
+                    <div class="p-4 pt-0 border-t border-slate-100">
+                        <p class="text-slate-400 text-xs font-semibold mb-3 mt-3">${p.description}</p>
+                        <textarea id="textarea_${id}" class="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-slate-800 text-xs font-mono leading-relaxed focus:ring-2 focus:ring-indigo-500 transition-all" rows="14">${escapeHtml(p.text)}</textarea>
+                        <div class="flex gap-2 mt-3 items-center">
+                            <button onclick="savePrompt('${p.key}', ${modalityAttr})" class="btn-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold">Guardar</button>
+                            <button onclick="resetPrompt('${p.key}', ${modalityAttr})" class="bg-slate-100 text-slate-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all">Repor Padrão</button>
+                            <span id="savedMsg_${id}" class="text-emerald-600 text-xs font-bold hidden">✓ Guardado</span>
+                        </div>
+                    </div>
+                </details>
+            `;
+        }
+
+        async function loadPrompts() {
+            const container = document.getElementById('promptsContainer');
+            const res = await apiFetch('/superadmin/prompts');
+            if (!res?.ok) {
+                container.innerHTML = '<p class="text-red-500 text-sm font-bold">Erro ao carregar prompts.</p>';
+                return;
+            }
+            const { prompts } = await res.json();
+
+            const categories = [
+                { id: 'rapido', title: 'Treino Rápido ("Sinto-me com Sorte")' },
+                { id: 'plano', title: 'Planos de Treino' },
+                { id: 'box', title: 'Treinos de Box' }
+            ];
+
+            container.innerHTML = categories.map(cat => {
+                const items = prompts.filter(p => p.category === cat.id);
+                if (items.length === 0) return '';
+                return `
+                    <div class="mb-6 last:mb-0">
+                        <h3 class="text-sm font-black text-slate-400 uppercase tracking-wider mb-3">${cat.title}</h3>
+                        <div class="space-y-3">${items.map(renderPromptItem).join('')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function savePrompt(key, modality) {
+            const id = `${key}__${modality || 'default'}`;
+            const text = document.getElementById(`textarea_${id}`).value;
+            if (!text.trim()) { alert('O prompt não pode ficar vazio.'); return; }
+
+            const res = await apiFetch('/superadmin/prompts', {
+                method: 'PATCH',
+                body: JSON.stringify({ key, modality, text })
+            });
+            if (res?.ok) {
+                const badge = document.getElementById(`badge_${id}`);
+                badge.textContent = 'Personalizado';
+                badge.className = badgeClasses(true);
+                const msg = document.getElementById(`savedMsg_${id}`);
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 3000);
+            } else {
+                alert('Erro ao guardar o prompt.');
+            }
+        }
+
+        async function resetPrompt(key, modality) {
+            if (!confirm('Repor este prompt para o valor padrão da aplicação? Isto substitui o texto atual da caixa.')) return;
+            const id = `${key}__${modality || 'default'}`;
+
+            const res = await apiFetch('/superadmin/prompts/reset', {
+                method: 'POST',
+                body: JSON.stringify({ key, modality })
+            });
+            if (res?.ok) {
+                const data = await res.json();
+                document.getElementById(`textarea_${id}`).value = data.text;
+                const badge = document.getElementById(`badge_${id}`);
+                badge.textContent = 'Padrão';
+                badge.className = badgeClasses(false);
+            } else {
+                alert('Erro ao repor o prompt.');
             }
         }
 

@@ -1,11 +1,14 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { PrismaClient } = require('@prisma/client');
 const { sendPasswordResetEmail } = require('../utils/email');
 
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const prisma = require('../lib/prisma');
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET não está definido. Define-o no .env antes de arrancar o servidor.');
+}
 
 /**
  * Register a new user
@@ -137,19 +140,65 @@ async function resetPassword(token, newPassword) {
 }
 
 /**
- * Middleware to protect routes
+ * Middleware to protect routes.
+ *
+ * O token só carrega o `userId`; o `role`, `boxId` e `boxValidated` são lidos
+ * da BD a cada pedido. Assim os middlewares de isolamento multi-tenant
+ * (requireSameBox & co.) têm sempre um `boxId` real, e uma mudança de role ou
+ * de box tem efeito imediato em vez de esperar pela expiração do token (7d).
  */
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
+    let payload;
+    try {
+        payload = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+        return res.sendStatus(403);
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId },
+            select: { id: true, role: true, boxId: true, boxValidated: true }
+        });
+        if (!user) return res.sendStatus(403);
+
+        req.user = {
+            userId: user.id,
+            role: user.role,
+            boxId: user.boxId,
+            boxValidated: user.boxValidated
+        };
         next();
-    });
+    } catch (err) {
+        console.error('[Auth] Falha ao carregar o utilizador do token:', err.message);
+        res.status(500).json({ error: 'Erro de autenticação.' });
+    }
+}
+
+/**
+ * Autenticação opcional: preenche `req.user` quando o pedido traz um token
+ * válido e segue em frente na mesma quando não traz (ou quando é inválido).
+ * Serve rotas que funcionam anónimas mas ganham contexto com sessão iniciada —
+ * por exemplo a partilha para a TV, que precisa de saber a quem pertence o
+ * treino para depois poder registar o resultado no histórico.
+ */
+async function optionalAuthenticateToken(req, res, next) {
+    if (!req.headers['authorization']) return next();
+    let settled = false;
+    const proceed = () => { if (!settled) { settled = true; next(); } };
+    // Reaproveita o authenticateToken (mesma leitura de role/box da BD) mas
+    // absorve as respostas de erro, transformando-as em "segue sem utilizador".
+    const swallow = { sendStatus: proceed, status: () => ({ json: proceed, send: proceed, end: proceed }) };
+    try {
+        await authenticateToken(req, swallow, proceed);
+    } catch (err) {
+        proceed();
+    }
 }
 
 /**
@@ -185,5 +234,6 @@ module.exports = {
     resetPassword,
     updateProfile,
     authenticateToken,
+    optionalAuthenticateToken,
     authorizeRoles
 };

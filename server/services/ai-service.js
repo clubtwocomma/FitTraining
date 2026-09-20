@@ -7,7 +7,7 @@ const https = require('https');
 const http = require('http');
 
 // ─── Server default API key (Pollinations.ai) ───
-const DEFAULT_API_KEY = 'sk_qYxYPRzO3EjO8TDaFEwxGAKhb3QBSBbM';
+const DEFAULT_API_KEY = process.env.POLLINATIONS_API_KEY;
 const POLLINATIONS_BASE = 'https://text.pollinations.ai/openai';  // OpenAI-compatible endpoint
 
 /**
@@ -92,6 +92,15 @@ function extractJSON(text) {
   return null;
 }
 
+// ─── Default Pollinations model, editable live from the super-admin console ───
+// (server/superadmin/index.html → GET/PATCH /api/superadmin/ai-model). Starts
+// at 'openai-large' and is overwritten at server startup from the AppSetting
+// table if an admin has chosen something else; setDefaultModel() then updates
+// it in place so a save takes effect immediately, no restart needed.
+let defaultModel = 'openai-large';
+function getDefaultModel() { return defaultModel; }
+function setDefaultModel(model) { defaultModel = model; }
+
 /**
  * Resolve API base URL and key based on provider + client key override.
  * Priority: client key > server default (Pollinations).
@@ -109,11 +118,12 @@ function resolveProvider(provider, clientApiKey) {
     // For pollination or any other, use Pollinations with client key
     return { baseUrl: 'https://gen.pollinations.ai', apiKey: clientApiKey, model: 'openai-large' };
   }
-  // Default: use server Pollinations key
-  return { baseUrl: 'https://gen.pollinations.ai', apiKey: DEFAULT_API_KEY, model: 'openai-large' };
+  // Default: use server Pollinations key + the admin-configured default model
+  return { baseUrl: 'https://gen.pollinations.ai', apiKey: DEFAULT_API_KEY, model: getDefaultModel() };
 }
 
 const { PROMPTS, MODALITIES, ATHLETE_PROFILE_TEMPLATE } = require('./fittraining-prompts-v2');
+const { getEffectivePrompt } = require('./prompt-overrides');
 
 /**
  * Helper to call AI and extract JSON.
@@ -170,8 +180,8 @@ const generateWithAI = async (provider, params) => {
   try {
     console.log(`[AI V3.0] Step 1: Evaluating Decision via ${baseUrl}...`);
     const decision = await callGeminiAdapter(
-      baseUrl, apiKey, 
-      PROMPTS.DECISAO.system, 
+      baseUrl, apiKey,
+      getEffectivePrompt('DECISAO_SYSTEM'),
       PROMPTS.DECISAO.user(athleteProfile),
       model
     );
@@ -190,7 +200,7 @@ const generateWithAI = async (provider, params) => {
     console.log(`[AI V3.0] Step 2: Generating Workout (${modality})...`);
     const session = await callGeminiAdapter(
       baseUrl, apiKey,
-      PROMPTS.TREINO.system(modality),
+      getEffectivePrompt('TREINO_SYSTEM', modality),
       PROMPTS.TREINO.user(athleteProfile, decision, optimization, modality),
       model
     );
@@ -351,7 +361,7 @@ const generateMultiDayPlan = async (provider, params) => {
     try {
       decision = await callGeminiAdapter(
         baseUrl, apiKey,
-        PROMPTS.DECISAO.system,
+        getEffectivePrompt('DECISAO_SYSTEM'),
         PROMPTS.DECISAO.user(athleteProfile),
         model
       );
@@ -377,7 +387,7 @@ const generateMultiDayPlan = async (provider, params) => {
     console.log(`[AI V3.0] A gerar Plano ${modality.toUpperCase()} (${totalDays} dias)...`);
     const parsed = await callGeminiAdapter(
       baseUrl, apiKey,
-      PROMPTS.PLANO.system(modality),
+      getEffectivePrompt('PLANO_SYSTEM', modality),
       PROMPTS.PLANO.user(planConfig, modality),
       model
     );
@@ -646,13 +656,21 @@ async function generateWod(prompt, goal = 'Daily WOD') {
     console.log(`[AI V3.0] Generating WOD...`);
     const parsed = await callGeminiAdapter(
       baseUrl, apiKey,
-      PROMPTS.WOD_UNICO.system(modality),
+      getEffectivePrompt('WOD_UNICO_SYSTEM', modality),
       PROMPTS.WOD_UNICO.user(wodConfig)
     );
+
+    // Build skill text for display
+    const skill = parsed.skill_strength;
+    const skillText = skill
+      ? `[${skill.type}] ${skill.name}\n${skill.sets} • ${skill.reps} • ${skill.loading}\n${skill.notes}`
+      : '';
     
     return {
       title: parsed.title || 'WOD do Dia',
       warmup: `[${parsed.warmup?.duration_minutes || 10} min] ${parsed.warmup?.description || ''}`,
+      skill: skillText,
+      skillData: skill || null,
       workout: `Formato: ${parsed.format}\nCap: ${parsed.time_cap}\nEstímulo: ${parsed.stimulus}\n\nRX: ${parsed.workout?.rx}\n\nSCALED: ${parsed.workout?.scaled}\n\nDica Coach: ${parsed.coaching_tip}`
     };
   } catch (err) {
@@ -678,17 +696,26 @@ async function generateBoxWodPlan(prompt, days = 5) {
     console.log(`[AI V3.0] Generating Weekly Box WOD Plan (${days} days)...`);
     const parsed = await callGeminiAdapter(
       baseUrl, apiKey,
-      PROMPTS.WOD_SEMANA.system(modality),
+      getEffectivePrompt('WOD_SEMANA_SYSTEM', modality),
       PROMPTS.WOD_SEMANA.user(weekConfig)
     );
     
     // Ensure we return an array matching the frontend expectations
-    const wodsArray = (parsed.wods || []).map(wod => ({
-      title: wod.title || 'WOD do Dia',
-      stimulus: wod.stimulus || 'Misto',
-      warmup: `[${wod.warmup?.duration_minutes || 10} min] ${wod.warmup?.description || ''}`,
-      workout: `Formato: ${wod.format}\nCap: ${wod.time_cap}\n\nRX: ${wod.workout?.rx}\n\nSCALED: ${wod.workout?.scaled}\n\nDica Coach: ${wod.coaching_tip}`
-    }));
+    const wodsArray = (parsed.wods || []).map(wod => {
+      const skill = wod.skill_strength;
+      const skillText = skill
+        ? `[${skill.type}] ${skill.name}\n${skill.sets} • ${skill.reps} • ${skill.loading}\n${skill.notes}`
+        : '';
+
+      return {
+        title: wod.title || 'WOD do Dia',
+        stimulus: wod.stimulus || 'Misto',
+        warmup: `[${wod.warmup?.duration_minutes || 10} min] ${wod.warmup?.description || ''}`,
+        skill: skillText,
+        skillData: skill || null,
+        workout: `Formato: ${wod.format}\nCap: ${wod.time_cap}\n\nRX: ${wod.workout?.rx}\n\nSCALED: ${wod.workout?.scaled}\n\nDica Coach: ${wod.coaching_tip}`
+      };
+    });
 
     return wodsArray;
   } catch (err) {
@@ -697,4 +724,4 @@ async function generateBoxWodPlan(prompt, days = 5) {
   }
 }
 
-module.exports = { generateWithAI, testConnection, generateMultiDayPlan, parseWorkoutText, generateWod, generateBoxWodPlan, callGeminiAdapter };
+module.exports = { generateWithAI, testConnection, generateMultiDayPlan, parseWorkoutText, generateWod, generateBoxWodPlan, callGeminiAdapter, getDefaultModel, setDefaultModel };

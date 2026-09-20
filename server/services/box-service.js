@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const crypto = require('crypto');
 
 /**
@@ -144,74 +143,80 @@ async function createClass(boxId, name, startTime, endTime, capacity = 12, locat
  * Book a class (Athlete)
  */
 async function bookClass(userId, classId) {
-    const targetClass = await prisma.gymClass.findUnique({
-        where: { id: parseInt(classId) },
-        include: { 
-            box: true,
-            bookings: { 
-                where: { status: { in: ['CONFIRMED', 'WAITLISTED'] } },
-                orderBy: { waitlistPosition: 'desc' }
-            } 
-        }
-    });
+    return await prisma.$transaction(async (tx) => {
+        // Lock the class row so concurrent bookings for the last spot are serialized,
+        // preventing two athletes from both landing on CONFIRMED (overbooking).
+        await tx.$queryRaw`SELECT id FROM "GymClass" WHERE id = ${parseInt(classId)} FOR UPDATE`;
 
-    if (!targetClass) throw new Error('Aula não encontrada.');
-    if (targetClass.cancelledAt) throw new Error('Esta aula foi cancelada.');
-    if (targetClass.box && !targetClass.box.approved) {
-        throw new Error('Esta Box ainda não foi aprovada pelo administrador do sistema.');
-    }
-
-    // Prevent booking classes that have already started
-    if (new Date(targetClass.startTime) <= new Date()) {
-        throw new Error('Não é possível inscrever-te numa aula que já começou ou já passou.');
-    }
-
-    // Check if user already booked this specific class
-    const existingSelf = targetClass.bookings.find(b => b.userId === parseInt(userId));
-    if (existingSelf && existingSelf.status !== 'CANCELLED') {
-        throw new Error('Já estás inscrito nesta aula.');
-    }
-
-    // Check if user already has a CONFIRMED booking for this day
-    const startOfDay = new Date(targetClass.startTime);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetClass.startTime);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const existingDaily = await prisma.booking.findFirst({
-        where: {
-            userId: parseInt(userId),
-            status: 'CONFIRMED',
-            gymClass: {
-                startTime: { gte: startOfDay, lte: endOfDay }
+        const targetClass = await tx.gymClass.findUnique({
+            where: { id: parseInt(classId) },
+            include: {
+                box: true,
+                bookings: {
+                    where: { status: { in: ['CONFIRMED', 'WAITLISTED'] } },
+                    orderBy: { waitlistPosition: 'desc' }
+                }
             }
+        });
+
+        if (!targetClass) throw new Error('Aula não encontrada.');
+        if (targetClass.cancelledAt) throw new Error('Esta aula foi cancelada.');
+        if (targetClass.box && !targetClass.box.approved) {
+            throw new Error('Esta Box ainda não foi aprovada pelo administrador do sistema.');
         }
-    });
 
-    if (existingDaily) {
-        throw new Error('Já tens uma reserva confirmada para este dia. Limite de 1 aula por dia.');
-    }
+        // Prevent booking classes that have already started
+        if (new Date(targetClass.startTime) <= new Date()) {
+            throw new Error('Não é possível inscrever-te numa aula que já começou ou já passou.');
+        }
 
-    const confirmedCount = targetClass.bookings.filter(b => b.status === 'CONFIRMED').length;
-    const isFull = confirmedCount >= targetClass.capacity;
+        // Check if user already booked this specific class
+        const existingSelf = targetClass.bookings.find(b => b.userId === parseInt(userId));
+        if (existingSelf && existingSelf.status !== 'CANCELLED') {
+            throw new Error('Já estás inscrito nesta aula.');
+        }
 
-    return await prisma.booking.upsert({
-        where: {
-            userId_classId: {
+        // Check if user already has a CONFIRMED booking for this day
+        const startOfDay = new Date(targetClass.startTime);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetClass.startTime);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const existingDaily = await tx.booking.findFirst({
+            where: {
                 userId: parseInt(userId),
-                classId: parseInt(classId)
+                status: 'CONFIRMED',
+                gymClass: {
+                    startTime: { gte: startOfDay, lte: endOfDay }
+                }
             }
-        },
-        update: {
-            status: isFull ? 'WAITLISTED' : 'CONFIRMED',
-            waitlistPosition: isFull ? (targetClass.bookings.filter(b => b.status === 'WAITLISTED').length + 1) : null
-        },
-        create: {
-            userId: parseInt(userId),
-            classId: parseInt(classId),
-            status: isFull ? 'WAITLISTED' : 'CONFIRMED',
-            waitlistPosition: isFull ? (targetClass.bookings.filter(b => b.status === 'WAITLISTED').length + 1) : null
+        });
+
+        if (existingDaily) {
+            throw new Error('Já tens uma reserva confirmada para este dia. Limite de 1 aula por dia.');
         }
+
+        const confirmedCount = targetClass.bookings.filter(b => b.status === 'CONFIRMED').length;
+        const isFull = confirmedCount >= targetClass.capacity;
+
+        return await tx.booking.upsert({
+            where: {
+                userId_classId: {
+                    userId: parseInt(userId),
+                    classId: parseInt(classId)
+                }
+            },
+            update: {
+                status: isFull ? 'WAITLISTED' : 'CONFIRMED',
+                waitlistPosition: isFull ? (targetClass.bookings.filter(b => b.status === 'WAITLISTED').length + 1) : null
+            },
+            create: {
+                userId: parseInt(userId),
+                classId: parseInt(classId),
+                status: isFull ? 'WAITLISTED' : 'CONFIRMED',
+                waitlistPosition: isFull ? (targetClass.bookings.filter(b => b.status === 'WAITLISTED').length + 1) : null
+            }
+        });
     });
 }
 
@@ -311,7 +316,11 @@ async function promoteWaitlist(classId) {
             });
             console.log(`[Waitlist] Promoted User ${booking.userId} in Class ${classId}`);
         }
+
+        return toPromote;
     }
+
+    return [];
 }
 
 /**

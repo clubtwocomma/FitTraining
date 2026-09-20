@@ -1,20 +1,29 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('./lib/prisma');
 
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 
 // Rate limiter for AI endpoints (10 requests per 15 minutes)
 const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 20, // A bit higher for testing but protects against abuse
   message: { error: 'Limite de gerações por IA atingido. Tenta novamente em 15 minutos.' }
+});
+
+// Rate limiter for login (brute-force protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiadas tentativas de login. Tenta novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 // Zod validation schemas
@@ -42,15 +51,16 @@ const planSchema = z.object({
 
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(2),
-  role: z.enum(['ADMIN', 'BOX_ADMIN', 'COACH', 'ATHLETE']).optional()
+  password: z.string().min(8),
+  name: z.string().min(2)
 });
 
 const { generateWorkout } = require('./utils/generator');
-const { testConnection, generateMultiDayPlan, parseWorkoutText, generateWod, generateBoxWodPlan } = require('./services/ai-service');
+const { testConnection, generateMultiDayPlan, parseWorkoutText, generateWod, generateBoxWodPlan, getDefaultModel, setDefaultModel } = require('./services/ai-service');
+const { fetchAvailableModels } = require('./services/pollinations-models');
+const { listPrompts, setOverride: setPromptOverride, clearOverride: clearPromptOverride, loadAllOverrides: loadPromptOverrides } = require('./services/prompt-overrides');
 const { 
-  registerUser, loginUser, updateProfile, authenticateToken, authorizeRoles,
+  registerUser, loginUser, updateProfile, authenticateToken, optionalAuthenticateToken, authorizeRoles,
   changePassword, requestPasswordReset, resetPassword 
 } = require('./services/auth-service');
 const { sendWelcomeEmail, sendValidationEmail, sendEmail } = require('./services/email-service');
@@ -63,23 +73,83 @@ const createNotification = async (userId, type, message, classId = null) => {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Multi-tenant isolation ──────────────────────────────────────────────────
+// Impede que um BOX_ADMIN/COACH de uma box giram recursos de outra box.
+// ADMIN (super-admin do sistema) tem sempre acesso.
+function requireSameBox(req, res, next) {
+  if (req.user.role === 'ADMIN') return next();
+  const boxId = parseInt(req.params.boxId || req.params.id || req.body.boxId || req.query.boxId);
+  if (!boxId || req.user.boxId !== boxId) {
+    return res.status(403).json({ error: 'Não autorizado a gerir esta box.' });
+  }
+  next();
+}
+
+// Para rotas que só têm classId/bookingId: resolve o boxId associado e valida.
+async function requireSameBoxForClass(req, res, next) {
+  try {
+    if (req.user.role === 'ADMIN') return next();
+    const classId = parseInt(req.params.id || req.params.classId);
+    const cls = await prisma.gymClass.findUnique({ where: { id: classId }, select: { boxId: true } });
+    if (!cls) return res.status(404).json({ error: 'Aula não encontrada.' });
+    if (req.user.boxId !== cls.boxId) {
+      return res.status(403).json({ error: 'Não autorizado a gerir esta box.' });
+    }
+    next();
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+async function requireSameBoxForBooking(req, res, next) {
+  try {
+    if (req.user.role === 'ADMIN') return next();
+    const bookingId = parseInt(req.params.id);
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: { gymClass: { select: { boxId: true } } } });
+    if (!booking) return res.status(404).json({ error: 'Inscrição não encontrada.' });
+    if (req.user.boxId !== booking.gymClass.boxId) {
+      return res.status(403).json({ error: 'Não autorizado a gerir esta box.' });
+    }
+    next();
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const {
   createBox, getBoxById, getBoxByInviteCode, getBoxUsers, validateUser, updateUserRole,
-  createClass, bookClass, getBoxSchedule, getWeekSchedule, promoteWaitlist, createBoxWod, updateBox
+  createClass, updateClass, bookClass, getBoxSchedule, getWeekSchedule, promoteWaitlist, createBoxWod, updateBox
 } = require('./services/box-service');
 
 const app = express();
 app.set('trust proxy', 1); // Confia no IP reencaminhado pelo Nginx
 const PORT = process.env.PORT || 5050;
 
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: false, // App is served via Nginx which may set its own CSP; avoid breaking the SPA for now
+  // O default do helmet (`no-referrer`) faz com que os embeds do YouTube na TV
+  // rebentem com "Erro 153" — o player exige um Referer válido. Este valor é o
+  // default dos browsers: envia só a origem para terceiros, nunca o path.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
+
+// Same-origin deployment behind Nginx (see nginx_fittraining.conf); restrict
+// cross-origin API access to an explicit allowlist instead of reflecting any origin.
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  }
+}));
 app.use(express.json());
 
 // --- Auth Routes ---
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name, role } = registerSchema.parse(req.body);
-    const user = await registerUser(email, password, name, role);
+    const { email, password, name } = registerSchema.parse(req.body);
+    const user = await registerUser(email, password, name);
     res.status(201).json(user);
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -89,13 +159,13 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const result = await loginUser(email, password);
     res.json(result);
   } catch (err) {
-    res.status(401).json({ error: err.message });
+    res.status(401).json({ error: 'Email ou palavra-passe incorretos.' });
   }
 });
 
@@ -151,15 +221,24 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// Load exercises
-const exercisesPath = path.join(__dirname, 'data', 'exercises.json');
+// Load exercises from the DB into memory (read-mostly, small enough to cache
+// for the generator's synchronous filtering — see server/utils/generator.js).
 let exercises = [];
 
-try {
-  const data = fs.readFileSync(exercisesPath, 'utf8');
-  exercises = JSON.parse(data);
-} catch (err) {
-  console.error('Error loading exercises:', err);
+async function loadExercisesFromDB() {
+  const rows = await prisma.exercise.findMany();
+  exercises = rows.map(r => ({
+    id: String(r.id),
+    name: r.name,
+    name_en: r.nameEn || undefined,
+    muscle_groups: r.muscleGroups,
+    equipment: r.equipment,
+    type: r.type,
+    safety_notes: r.safetyNotes || '',
+    default_reps: r.defaultReps || '10-12',
+    default_time: r.defaultTime || 0
+  }));
+  console.log(`[Exercises] ${exercises.length} exercícios carregados da BD.`);
 }
 
 app.get('/api/exercises', (req, res) => {
@@ -194,7 +273,7 @@ app.get('/api/painstorms', async (req, res) => {
   }
 });
 
-app.post('/api/generate', aiLimiter, (req, res) => {
+app.post('/api/generate', authenticateToken, aiLimiter, (req, res) => {
   try {
     const { time, muscleGroups, type, equipment, aiProvider, profile, clientApiKey, optimization } = generateSchema.parse(req.body);
 
@@ -237,6 +316,74 @@ app.get('/api/superadmin/stats', authenticateToken, authorizeRoles('ADMIN'), asy
     res.json({ totalBoxes, totalAthletes, classesThisWeek, bookingsToday });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// --- AI Model Selection (Pollinations.ai) ---
+const AI_MODEL_SETTING_KEY = 'pollinations_default_model';
+
+app.get('/api/superadmin/ai-models', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  try {
+    const models = await fetchAvailableModels();
+    res.json({ models, currentModel: getDefaultModel() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/superadmin/ai-model', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  try {
+    const { model } = req.body;
+    if (!model || typeof model !== 'string') {
+      return res.status(400).json({ error: 'Modelo inválido.' });
+    }
+    await prisma.appSetting.upsert({
+      where: { key: AI_MODEL_SETTING_KEY },
+      update: { value: model },
+      create: { key: AI_MODEL_SETTING_KEY, value: model }
+    });
+    setDefaultModel(model);
+    console.log(`[SuperAdmin] Modelo Pollinations por defeito alterado para: ${model}`);
+    res.json({ ok: true, model });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// --- AI Prompt Overrides (Planos de Treino & Box WODs) ---
+app.get('/api/superadmin/prompts', authenticateToken, authorizeRoles('ADMIN'), (req, res) => {
+  try {
+    res.json({ prompts: listPrompts() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/superadmin/prompts', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  try {
+    const { key, modality, text } = req.body;
+    if (!key || typeof key !== 'string' || !text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Prompt inválido: chave e texto são obrigatórios.' });
+    }
+    const result = await setPromptOverride(key, modality, text);
+    console.log(`[SuperAdmin] Prompt "${key}" (${result.modality || 'default'}) personalizado.`);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/superadmin/prompts/reset', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  try {
+    const { key, modality } = req.body;
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: 'Chave do prompt é obrigatória.' });
+    }
+    const result = await clearPromptOverride(key, modality);
+    console.log(`[SuperAdmin] Prompt "${key}" (${result.modality || 'default'}) reposto ao padrão.`);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -304,10 +451,18 @@ app.post('/api/superadmin/boxes', authenticateToken, authorizeRoles('ADMIN'), as
 app.delete('/api/superadmin/boxes/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     const boxId = parseInt(req.params.id);
-    await prisma.gymClass.deleteMany({ where: { boxId } });
-    await prisma.boxWod.deleteMany({ where: { boxId } });
-    await prisma.user.updateMany({ where: { boxId }, data: { boxId: null, role: 'ATHLETE', boxValidated: false } });
-    await prisma.box.delete({ where: { id: boxId } });
+    await prisma.$transaction(async (tx) => {
+      // Results referencing this box's WODs must go first (no cascade on that FK)
+      const boxWods = await tx.boxWod.findMany({ where: { boxId }, select: { id: true } });
+      const boxWodIds = boxWods.map(w => w.id);
+      if (boxWodIds.length > 0) {
+        await tx.result.deleteMany({ where: { boxWodId: { in: boxWodIds } } });
+      }
+      await tx.gymClass.deleteMany({ where: { boxId } });
+      await tx.boxWod.deleteMany({ where: { boxId } });
+      await tx.user.updateMany({ where: { boxId }, data: { boxId: null, role: 'ATHLETE', boxValidated: false } });
+      await tx.box.delete({ where: { id: boxId } });
+    });
     res.json({ ok: true });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -403,7 +558,7 @@ app.post('/api/boxes/join', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/boxes/:id', authenticateToken, async (req, res) => {
+app.get('/api/boxes/:id', authenticateToken, requireSameBox, async (req, res) => {
   try {
     const box = await getBoxById(req.params.id);
     if (!box) return res.status(404).json({ error: 'Box não encontrada.' });
@@ -413,7 +568,7 @@ app.get('/api/boxes/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/boxes/:id/users', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.get('/api/boxes/:id/users', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const users = await getBoxUsers(req.params.id);
     res.json(users);
@@ -422,7 +577,7 @@ app.get('/api/boxes/:id/users', authenticateToken, authorizeRoles('ADMIN', 'BOX_
   }
 });
 
-app.patch('/api/boxes/:id/users/:userId/validate', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN'), async (req, res) => {
+app.patch('/api/boxes/:id/users/:userId/validate', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN'), requireSameBox, async (req, res) => {
   try {
     await validateUser(req.params.userId, req.params.id);
 
@@ -440,7 +595,7 @@ app.patch('/api/boxes/:id/users/:userId/validate', authenticateToken, authorizeR
   }
 });
 
-app.patch('/api/boxes/:id/users/:userId/role', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN'), async (req, res) => {
+app.patch('/api/boxes/:id/users/:userId/role', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN'), requireSameBox, async (req, res) => {
   try {
     const { role } = req.body;
     if (role === 'ADMIN' && req.user.role !== 'ADMIN') {
@@ -469,7 +624,7 @@ app.patch('/api/boxes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMI
 });
 
 // --- WOD & Class Management (Box Scoped) ---
-app.get('/api/boxes/:boxId/wods', async (req, res) => {
+app.get('/api/boxes/:boxId/wods', authenticateToken, requireSameBox, async (req, res) => {
   try {
     const { date } = req.query;
     let where = { boxId: parseInt(req.params.boxId) };
@@ -494,7 +649,7 @@ app.get('/api/boxes/:boxId/wods', async (req, res) => {
   }
 });
 
-app.get('/api/boxes/:boxId/classes', async (req, res) => {
+app.get('/api/boxes/:boxId/classes', authenticateToken, requireSameBox, async (req, res) => {
   try {
     const targetDate = req.query.date ? new Date(req.query.date) : new Date();
     const today = new Date(targetDate);
@@ -523,7 +678,7 @@ app.get('/api/boxes/:boxId/classes', async (req, res) => {
   }
 });
 
-app.post('/api/boxes/:boxId/wods', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.post('/api/boxes/:boxId/wods', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const { title, content, stimulus, date } = req.body;
     const newWod = await createBoxWod(req.params.boxId, date || new Date(), title, content, stimulus);
@@ -533,7 +688,7 @@ app.post('/api/boxes/:boxId/wods', authenticateToken, authorizeRoles('ADMIN', 'B
   }
 });
 
-app.post('/api/boxes/:boxId/wods/bulk', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.post('/api/boxes/:boxId/wods/bulk', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const { wods, startDate } = req.body;
     if (!wods || !Array.isArray(wods)) throw new Error('O formato dos wods deve ser um array.');
@@ -549,7 +704,7 @@ app.post('/api/boxes/:boxId/wods/bulk', authenticateToken, authorizeRoles('ADMIN
         req.params.boxId, 
         dateStr, 
         wod.title || `WOD Dia ${i+1}`, 
-        { warmup: wod.warmup, main: wod.workout, cooldown: wod.cooldown || '' }, 
+        { warmup: wod.warmup, skill: wod.skill || '', skillData: wod.skillData || null, main: wod.workout, cooldown: wod.cooldown || '' }, 
         wod.stimulus || ''
       );
       createdWods.push(newWod);
@@ -565,7 +720,7 @@ app.post('/api/boxes/:boxId/wods/bulk', authenticateToken, authorizeRoles('ADMIN
   }
 });
 
-app.get('/api/boxes/:boxId/schedule/week', authenticateToken, async (req, res) => {
+app.get('/api/boxes/:boxId/schedule/week', authenticateToken, requireSameBox, async (req, res) => {
   try {
     const { date } = req.query;
     const schedule = await getWeekSchedule(req.params.boxId, date || new Date());
@@ -576,7 +731,7 @@ app.get('/api/boxes/:boxId/schedule/week', authenticateToken, async (req, res) =
 });
 
 // Deprecated or keep for basic mobile use? Updated to call createClass with new fields
-app.post('/api/boxes/:boxId/classes', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.post('/api/boxes/:boxId/classes', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const { name, startTime, endTime, capacity, location, coachId } = req.body;
     const newClass = await createClass(req.params.boxId, name, startTime, endTime, capacity, location, coachId);
@@ -587,7 +742,7 @@ app.post('/api/boxes/:boxId/classes', authenticateToken, authorizeRoles('ADMIN',
 });
 
 // --- Admin Dedicated Endpoints ---
-app.post('/api/admin/classes', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.post('/api/admin/classes', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const { name, date, startTime, endTime, capacity, location, coachId, boxId, recurrence, recurrenceEndDate } = req.body;
     // Combine date and time
@@ -601,7 +756,7 @@ app.post('/api/admin/classes', authenticateToken, authorizeRoles('ADMIN', 'BOX_A
   }
 });
 
-app.patch('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.patch('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBoxForClass, async (req, res) => {
   try {
     const { name, date, startTime, endTime, capacity, location, coachId, updateAllSeries, recurrence, recurrenceEndDate } = req.body;
     const classId = parseInt(req.params.id);
@@ -626,7 +781,7 @@ app.patch('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', '
   }
 });
 
-app.delete('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.delete('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBoxForClass, async (req, res) => {
   try {
     const { deleteAllSeries } = req.query;
     const classId = parseInt(req.params.id);
@@ -641,7 +796,7 @@ app.delete('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 
         const timeStr = new Date(cls.startTime).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
         const dateStr = new Date(cls.startTime).toLocaleDateString('pt-PT');
         for (const b of cls.bookings) {
-          if (b.status === 'CONFIRMED' || b.status === 'WAITLIST') {
+          if (b.status === 'CONFIRMED' || b.status === 'WAITLISTED') {
             createNotification(b.userId, 'class_cancelled', `A série de aulas ${cls.name} (${dateStr} às ${timeStr}) foi cancelada.`, null);
           }
         }
@@ -657,7 +812,7 @@ app.delete('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 
         const timeStr = new Date(cls.startTime).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
         const dateStr = new Date(cls.startTime).toLocaleDateString('pt-PT');
         for (const b of cls.bookings) {
-          if (b.status === 'CONFIRMED' || b.status === 'WAITLIST') {
+          if (b.status === 'CONFIRMED' || b.status === 'WAITLISTED') {
             createNotification(b.userId, 'class_cancelled', `A aula ${cls.name} de ${dateStr} às ${timeStr} foi cancelada.`, null);
           }
         }
@@ -670,7 +825,7 @@ app.delete('/api/admin/classes/:id', authenticateToken, authorizeRoles('ADMIN', 
   }
 });
 
-app.get('/api/admin/classes/:id/bookings', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.get('/api/admin/classes/:id/bookings', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBoxForClass, async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
       where: { classId: parseInt(req.params.id) },
@@ -687,7 +842,7 @@ app.get('/api/admin/classes/:id/bookings', authenticateToken, authorizeRoles('AD
   }
 });
 
-app.patch('/api/admin/bookings/:id/checkin', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.patch('/api/admin/bookings/:id/checkin', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBoxForBooking, async (req, res) => {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -721,7 +876,7 @@ app.patch('/api/admin/bookings/:id/checkin', authenticateToken, authorizeRoles('
   }
 });
 
-app.delete('/api/admin/bookings/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.delete('/api/admin/bookings/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBoxForBooking, async (req, res) => {
   try {
     const booking = await prisma.booking.findUnique({ where: { id: parseInt(req.params.id) } });
     if (!booking) return res.status(404).json({ error: 'Inscrição não encontrada.' });
@@ -739,7 +894,7 @@ app.delete('/api/admin/bookings/:id', authenticateToken, authorizeRoles('ADMIN',
   }
 });
 
-app.get('/api/admin/coaches', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), async (req, res) => {
+app.get('/api/admin/coaches', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN', 'COACH'), requireSameBox, async (req, res) => {
   try {
     const { boxId } = req.query;
     const coaches = await prisma.user.findMany({
@@ -812,11 +967,10 @@ app.delete('/api/bookings/:bookingId', authenticateToken, async (req, res) => {
           const timeStr = new Date(cls.startTime).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
           createNotification(cls.coachId, 'booking_cancel', `${athlete.name} cancelou a inscrição na aula das ${timeStr}`, booking.classId);
         }
-        // Notify the promoted athlete
-        const waitlistNext = await prisma.booking.findFirst({ where: { classId: booking.classId, status: 'CONFIRMED', id: { not: booking.id } }, orderBy: { registeredAt: 'desc' } });
-        if (waitlistNext) {
+        // Notify the athletes actually promoted from the waitlist
+        for (const promotedBooking of promoted) {
           const timeStr = new Date(cls.startTime).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-          createNotification(waitlistNext.userId, 'waitlist_promoted', `Boa notícia! Passaste da lista de espera para a aula das ${timeStr}`, booking.classId);
+          createNotification(promotedBooking.userId, 'waitlist_promoted', `Boa notícia! Passaste da lista de espera para a aula das ${timeStr}`, booking.classId);
         }
       } catch (e) {}
     } else {
@@ -900,7 +1054,29 @@ function calculateScoreValue(score, scoreType) {
 app.post('/api/box/results', authenticateToken, async (req, res) => {
   try {
     const { boxWodId, globalWodId, scheduledWorkoutId, score, type, notes, scoreType } = req.body;
-    
+
+    // Um atleta só pode submeter para um WOD da sua própria box, e só para um
+    // treino agendado que lhe pertença — caso contrário dava para poluir o
+    // leaderboard de qualquer outra box.
+    if (boxWodId) {
+      const wod = await prisma.boxWod.findUnique({
+        where: { id: parseInt(boxWodId) },
+        select: { boxId: true }
+      });
+      if (!wod) return res.status(404).json({ error: 'WOD não encontrado.' });
+      if (req.user.role !== 'ADMIN' && wod.boxId !== req.user.boxId) {
+        return res.status(403).json({ error: 'Não autorizado a submeter resultados para esta box.' });
+      }
+    }
+
+    if (scheduledWorkoutId) {
+      const owned = await prisma.scheduledWorkout.findFirst({
+        where: { id: parseInt(scheduledWorkoutId), plan: { userId: req.user.userId } },
+        select: { id: true }
+      });
+      if (!owned) return res.status(404).json({ error: 'Treino não encontrado.' });
+    }
+
     const scoreValue = calculateScoreValue(score, scoreType || 'REPS');
 
     // Check for existing result to avoid duplicates, but only if an ID is provided
@@ -950,17 +1126,36 @@ app.post('/api/box/results', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/boxes/:boxId/results', async (req, res) => {
+app.get('/api/boxes/:boxId/results', authenticateToken, requireSameBox, async (req, res) => {
   try {
     const { boxWodId, globalWodId, scheduledWorkoutId } = req.query;
-    
+
+    // Sem nenhum identificador, o `where` ficava todo `undefined` e a query
+    // devolvia os resultados de todos os utilizadores da aplicação.
+    if (!boxWodId && !globalWodId && !scheduledWorkoutId) {
+      return res.status(400).json({ error: 'Indica boxWodId, globalWodId ou scheduledWorkoutId.' });
+    }
+
     let sortOrder = 'desc';
     if (boxWodId) {
       const wod = await prisma.boxWod.findUnique({ where: { id: parseInt(boxWodId) } });
-      if (wod?.scoreType === 'TIME') sortOrder = 'asc';
+      if (!wod) return res.status(404).json({ error: 'WOD não encontrado.' });
+      // O :boxId do path já foi validado contra o utilizador pelo requireSameBox;
+      // falta garantir que o WOD pedido é mesmo dessa box.
+      if (wod.boxId !== parseInt(req.params.boxId)) {
+        return res.status(403).json({ error: 'Este WOD não pertence a esta box.' });
+      }
+      if (wod.scoreType === 'TIME') sortOrder = 'asc';
     } else if (globalWodId) {
       const wod = await prisma.globalWod.findUnique({ where: { id: parseInt(globalWodId) } });
       if (wod?.scoreType === 'TIME') sortOrder = 'asc';
+    } else if (scheduledWorkoutId) {
+      // Treinos de plano são privados do atleta.
+      const owned = await prisma.scheduledWorkout.findFirst({
+        where: { id: parseInt(scheduledWorkoutId), plan: { userId: req.user.userId } },
+        select: { id: true }
+      });
+      if (!owned) return res.status(404).json({ error: 'Treino não encontrado.' });
     }
 
     const results = await prisma.result.findMany({
@@ -1165,18 +1360,6 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
   }
 });
 
-app.patch('/api/workouts/:id/complete', authenticateToken, async (req, res) => {
-  try {
-    const workout = await prisma.scheduledWorkout.update({
-      where: { id: parseInt(req.params.id) },
-      data: { completed: true }
-    });
-    res.json(workout);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
 app.post('/api/generate-plan', authenticateToken, aiLimiter, async (req, res) => {
   try {
     const data = req.body;
@@ -1299,7 +1482,7 @@ app.post('/api/workouts/:workoutId/complete', authenticateToken, async (req, res
     let processedFeedback = null;
     try {
       const { PROMPTS } = require('./services/fittraining-prompts-v2');
-      const { baseUrl, apiKey } = { baseUrl: 'https://gen.pollinations.ai', apiKey: process.env.POLLINATIONS_API_KEY || 'sk_qYxYPRzO3EjO8TDaFEwxGAKhb3QBSBbM' };
+      const { baseUrl, apiKey } = { baseUrl: 'https://gen.pollinations.ai', apiKey: process.env.POLLINATIONS_API_KEY };
 
       const workoutSummary = {
         focus: workout.focus,
@@ -1343,7 +1526,7 @@ app.post('/api/workouts/:workoutId/complete', authenticateToken, async (req, res
   }
 });
 
-app.post('/api/test-ai', async (req, res) => {
+app.post('/api/test-ai', authenticateToken, aiLimiter, async (req, res) => {
   const { provider, apiKey } = req.body;
   try {
     const result = await testConnection(provider, apiKey);
@@ -1353,7 +1536,7 @@ app.post('/api/test-ai', async (req, res) => {
   }
 });
 
-app.post('/api/generate-workout', aiLimiter, async (req, res) => {
+app.post('/api/generate-workout', authenticateToken, aiLimiter, async (req, res) => {
   try {
     const { prompt, goal } = req.body;
     const result = await generateWod(prompt, goal);
@@ -1364,7 +1547,7 @@ app.post('/api/generate-workout', aiLimiter, async (req, res) => {
   }
 });
 
-app.post('/api/generate-box-plan', aiLimiter, async (req, res) => {
+app.post('/api/generate-box-plan', authenticateToken, aiLimiter, async (req, res) => {
   try {
     const { prompt, days } = req.body;
     const plan = await generateBoxWodPlan(prompt, parseInt(days) || 5);
@@ -1415,28 +1598,39 @@ app.post('/api/custom-workouts', authenticateToken, async (req, res) => {
       }
     });
 
-    // Inject new exercises into the main exercises array for future AI prompts
+    // Inject new exercises into the DB (and the in-memory cache) for future AI prompts
     const existingNames = new Set(exercises.map(e => e.name.toLowerCase()));
-    let injected = 0;
-    for (const ex of parsed.exercises) {
-      if (!existingNames.has(ex.name.toLowerCase()) && ex.name !== '?' && ex.reps !== '?') {
+    const newExercises = parsed.exercises.filter(ex =>
+      !existingNames.has(ex.name.toLowerCase()) && ex.name !== '?' && ex.reps !== '?'
+    );
+
+    if (newExercises.length > 0) {
+      const created = await Promise.all(newExercises.map(ex =>
+        prisma.exercise.create({
+          data: {
+            name: ex.name,
+            muscleGroups: [],
+            equipment: [],
+            type: [type || 'outro'],
+            source: 'custom-library'
+          }
+        }).catch(() => null) // skip on unique-name collisions
+      ));
+
+      for (const row of created) {
+        if (!row) continue;
         exercises.push({
-          id: exercises.length + 1,
-          name: ex.name,
-          muscle_groups: [],
-          equipment: [],
-          type: type || 'outro',
-          source: 'custom-library'
+          id: String(row.id),
+          name: row.name,
+          muscle_groups: row.muscleGroups,
+          equipment: row.equipment,
+          type: row.type,
+          default_reps: row.defaultReps,
+          default_time: row.defaultTime,
+          safety_notes: row.safetyNotes || ''
         });
-        existingNames.add(ex.name.toLowerCase());
-        injected++;
       }
-    }
-    if (injected > 0) {
-      // Still writing to exercises.json for now as it's not fully DB migrated
-      const exercisesPath = path.join(__dirname, 'data', 'exercises.json');
-      fs.writeFileSync(exercisesPath, JSON.stringify(exercises, null, 2), 'utf8');
-      console.log(`[Custom Library] Injected ${injected} new exercise(s) into exercises.json`);
+      console.log(`[Custom Library] Injected ${created.filter(Boolean).length} new exercise(s) into the Exercise table`);
     }
 
     res.json(workout);
@@ -1456,6 +1650,93 @@ app.delete('/api/custom-workouts/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── TV Share (partilha de treinos para TV) ────────────────────────────────────
+const tvShares = new Map(); // code -> { workout, createdAt }
+const SHARE_TTL_MS = 6 * 60 * 60 * 1000;
+
+function randomTvCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - SHARE_TTL_MS;
+  tvShares.forEach((s, c) => { if (s.createdAt < cutoff) tvShares.delete(c); });
+}, 60 * 60 * 1000);
+
+const MAX_TV_SHARES = 500;
+
+const tvShareLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Limite de partilhas atingido. Tenta novamente em 15 minutos.' }
+});
+
+const tvResultLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiados registos seguidos. Tenta novamente mais tarde.' }
+});
+
+app.post('/api/tv-share', tvShareLimiter, optionalAuthenticateToken, express.json({ limit: '1mb' }), (req, res) => {
+  const { workout } = req.body || {};
+  if (!workout) return res.status(400).json({ error: 'workout obrigatório' });
+  if (tvShares.size >= MAX_TV_SHARES) {
+    return res.status(503).json({ error: 'Demasiadas salas ativas. Tenta novamente mais tarde.' });
+  }
+  let code;
+  do { code = randomTvCode(); } while (tvShares.has(code));
+  // Guardamos o dono da sala: a TV não tem sessão, por isso é este userId que
+  // permite registar o resultado no histórico no fim do treino.
+  tvShares.set(code, { workout, userId: req.user?.userId || null, createdAt: Date.now() });
+  res.json({ code });
+});
+
+app.get('/api/tv-share/:code', (req, res) => {
+  const share = tvShares.get(req.params.code.toUpperCase());
+  if (!share) return res.status(404).json({ error: 'Sala não encontrada' });
+  // A sala não fecha ao registar o score: da TV dá para repetir o WOD e
+  // registar outra tentativa. Só expira por SHARE_TTL_MS.
+  res.json({ workout: share.workout, canSaveResult: !!share.userId });
+});
+
+// Registo do resultado a partir da TV. Sem sessão iniciada do lado da TV: quem
+// autoriza é o próprio código da sala, que só o dono conhece (foi ele que a
+// criou autenticado na app) e que expira ao fim de SHARE_TTL_MS.
+app.post('/api/tv-share/:code/result', tvResultLimiter, async (req, res) => {
+  const code = req.params.code.toUpperCase();
+  const share = tvShares.get(code);
+  // Nunca 401/403 aqui: o apiFetch do cliente faz logout e recarrega a página
+  // nesses estados, e a TV perderia o ecrã de resultado por baixo dos pés.
+  if (!share) return res.status(404).json({ error: 'Sala não encontrada ou expirada.' });
+  if (!share.userId) {
+    return res.status(409).json({ error: 'Esta sala foi aberta sem sessão iniciada. Inicia sessão na app e envia o treino outra vez.' });
+  }
+
+  const { score, scoreValue, notes } = req.body || {};
+  if (typeof score !== 'string' || !score.trim()) return res.status(400).json({ error: 'score obrigatório' });
+
+  try {
+    const result = await prisma.result.create({
+      data: {
+        userId: share.userId,
+        score: score.trim().slice(0, 80),
+        scoreValue: typeof scoreValue === 'number' && Number.isFinite(scoreValue) ? scoreValue : null,
+        type: 'tv_timer',
+        notes: typeof notes === 'string' && notes.trim() ? notes.trim().slice(0, 500) : null
+      }
+    });
+    // Guardamos os registos da sala apenas para diagnóstico: cada repetição do
+    // WOD pode gerar um resultado novo.
+    share.resultIds = [...(share.resultIds || []), result.id];
+    res.status(201).json({ id: result.id });
+  } catch (err) {
+    console.error('[TV] Falha ao registar resultado:', err.message);
+    res.status(500).json({ error: 'Não foi possível registar o resultado.' });
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 if (fs.existsSync(publicPath)) {
   console.log(`[Static] Serving from ${publicPath}`);
 
@@ -1514,4 +1795,18 @@ const startServer = (port) => {
   });
 };
 
-startServer(parseInt(PORT, 10));
+async function loadAiModelSetting() {
+  const setting = await prisma.appSetting.findUnique({ where: { key: AI_MODEL_SETTING_KEY } });
+  if (setting?.value) {
+    setDefaultModel(setting.value);
+    console.log(`[AI] Modelo Pollinations por defeito carregado da BD: ${setting.value}`);
+  } else {
+    console.log(`[AI] Nenhum modelo guardado — a usar o valor por defeito: ${getDefaultModel()}`);
+  }
+}
+
+Promise.all([
+  loadExercisesFromDB().catch(err => console.error('[Exercises] Falha ao carregar exercícios da BD:', err.message)),
+  loadAiModelSetting().catch(err => console.error('[AI] Falha ao carregar definição de modelo:', err.message)),
+  loadPromptOverrides().catch(err => console.error('[Prompts] Falha ao carregar overrides de prompt:', err.message))
+]).finally(() => startServer(parseInt(PORT, 10)));

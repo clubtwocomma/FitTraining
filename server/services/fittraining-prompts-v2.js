@@ -564,16 +564,17 @@ VALIDAÇÃO: plan_meta.training_days + plan_meta.rest_days = ${planConfig.totalD
 
   WOD_UNICO: {
     system: (modality = 'crossfit') => `
-És um coach de CrossFit experiente with foco em programação segura e escalável.
+És um coach de CrossFit experiente com foco em programação segura e escalável.
 Respondes APENAS em JSON válido. Em Português de Portugal.
 
 ${MODALITIES[modality] || MODALITIES.crossfit}
 
 REGRAS INVIOLÁVEIS:
-  1. SEMPRE inclui versão Rx e Scaled.
+  1. SEMPRE inclui versão Rx e Scaled no WOD.
   2. Escalamento por hierarquia: carga → amplitude → movimento (nunca só carga).
   3. Cargas em % RM ou peso específico de competição (para Hyrox).
   4. Aquecimento específico para o WOD — nunca genérico.
+  5. ⚠️ OBRIGATÓRIO: Cada sessão de Box TEM de ter uma componente de Skill ou Força (skill_strength) ANTES do WOD principal. Nunca geres um WOD sem esta secção. O tipo deve ser "Skill" ou "Força".
 `.trim(),
 
     user: (wodConfig) => `
@@ -593,6 +594,15 @@ Equipamento: ${JSON.stringify(wodConfig.equipment || ['barbell', 'kettlebell', '
   "warmup": {
     "duration_minutes": 10,
     "description": "string — específico para os padrões de movimento do WOD"
+  },
+  "skill_strength": {
+    "type": "Skill | Força",
+    "name": "string — nome do exercício ou skill principal (ex: 'Snatch', 'Muscle-Up Progressions', 'Back Squat')",
+    "duration_minutes": 15,
+    "sets": "string — ex: '5 séries' ou '10 min de prática'",
+    "reps": "string — ex: '3 reps', 'EMOM 10 min: 2 reps', 'técnica livre'",
+    "loading": "string — ex: '80% RM', 'peso técnico', 'Peso Corporal'",
+    "notes": "string — instrução técnica principal e objetivo desta secção"
   },
   "workout": {
     "rx": "string — WOD completo com cargas em % RM e distâncias/reps",
@@ -617,6 +627,7 @@ PRINCÍPIOS DE PROGRAMAÇÃO SEMANAL:
   3. Quarta/quinta: dia mais pesado (melhor recuperação antes e depois).
   4. Sexta/sábado: trabalho longo de capacidade ou WOD de equipa.
   5. Cada WOD tem Rx e Scaled.
+  6. ⚠️ OBRIGATÓRIO: Cada dia de treino TEM de ter uma componente de Skill ou Força (skill_strength) ANTES do WOD principal. Nunca geres um dia sem esta secção. Alterna entre "Skill" e "Força" ao longo da semana.
 `.trim(),
 
     user: (weekConfig) => `
@@ -639,6 +650,15 @@ Equipamento: ${JSON.stringify(weekConfig.equipment || ['barbell', 'kettlebell', 
       "format": "string",
       "time_cap": "string",
       "warmup": { "duration_minutes": 10, "description": "string" },
+      "skill_strength": {
+        "type": "Skill | Força",
+        "name": "string — ex: 'Clean & Jerk', 'Handstand Push-up Progressions', 'Deadlift'",
+        "duration_minutes": 15,
+        "sets": "string",
+        "reps": "string",
+        "loading": "string — em % RM ou 'Peso Corporal'",
+        "notes": "string — instrução técnica e objetivo"
+      },
       "workout": { "rx": "string", "scaled": "string" },
       "coaching_tip": "string",
       "intended_time": "string"

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Share2, Download, ChevronLeft, Trophy, Clock, Info, X, CheckSquare, TrendingUp, ChevronDown, ChevronUp, Pin } from 'lucide-react'
+import { Share2, Download, ChevronLeft, Trophy, Clock, Info, X, CheckSquare, TrendingUp, ChevronDown, ChevronUp, Pin, Tv2 } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import FeedbackModal from './FeedbackModal'
+import AirPlayView from './AirPlayView'
 
 // Execution notes database linked to crossfit.com movements
 const EXERCISE_NOTES = {
@@ -84,6 +85,7 @@ export default function WorkoutView({ data, onBack, onPin }) {
         boxWodId,
         globalWodId
     } = data || {}
+    const [showAirPlay, setShowAirPlay] = useState(false)
     const [infoExpanded, setInfoExpanded] = useState(null)
     const [phaseInfoExpanded, setPhaseInfoExpanded] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -194,6 +196,10 @@ export default function WorkoutView({ data, onBack, onPin }) {
         }
     }
 
+    if (showAirPlay) {
+        return <AirPlayView data={data} onClose={() => setShowAirPlay(false)} />
+    }
+
     return (
         <div className="workout-view animate-fade">
 
@@ -227,7 +233,7 @@ export default function WorkoutView({ data, onBack, onPin }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div>
                         <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Duração</div>
                         <div style={{ fontSize: '1rem', fontWeight: 800 }}>{totalTime} min</div>
@@ -236,6 +242,19 @@ export default function WorkoutView({ data, onBack, onPin }) {
                         <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Foco</div>
                         <div style={{ fontSize: '1rem', fontWeight: 800 }}>{summary.type || 'Híbrido'}</div>
                     </div>
+                    <button
+                        onClick={() => setShowAirPlay(true)}
+                        style={{
+                            marginLeft: 'auto',
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            background: 'rgba(255,255,255,0.12)', color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)', borderRadius: '0.75rem',
+                            padding: '0.5rem 1rem', cursor: 'pointer',
+                            fontWeight: 700, fontSize: '0.85rem'
+                        }}
+                    >
+                        <Tv2 size={16} /> AirPlay
+                    </button>
                 </div>
             </div>
 

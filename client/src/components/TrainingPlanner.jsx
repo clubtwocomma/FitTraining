@@ -230,7 +230,8 @@ export default function TrainingPlanner({ onBack, profile }) {
                     background: 'rgba(15, 23, 42, 0.85)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
+                    paddingTop: '20vh',
                     zIndex: 99999, gap: '1.5rem', padding: '2rem', color: 'white'
                 }}>
                     <div style={{
@@ -239,9 +240,9 @@ export default function TrainingPlanner({ onBack, profile }) {
                         animation: 'spin 1s linear infinite', flexShrink: 0
                     }} />
                     <div style={{ textAlign: 'center', maxWidth: '320px' }}>
-                        <h2 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.6rem)', fontWeight: 800, marginBottom: '0.75rem' }}>🤖 Arquitetando a tua Evolução</h2>
+                        <h2 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.6rem)', fontWeight: 900, marginBottom: '0.75rem' }}>🤖 A moldar o teu treino...</h2>
                         <p style={{ opacity: 0.75, fontSize: 'clamp(0.85rem, 3vw, 1rem)', lineHeight: 1.5 }}>
-                            A IA está a desenhar o teu plano personalizado. Aguarda...
+                            A IA está a otimizar cada repetição para os teus objetivos.
                         </p>
                     </div>
                 </div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Clock, Dumbbell, Zap, Sparkles, BrainCircuit, Shuffle } from 'lucide-react'
 
 const MUSCLE_GROUPS = [
-    'peito', 'costas', 'ombros', 'pernas', 'glúteos', 'core', 'corpo inteiro'
+    'peito', 'costas', 'ombros', 'braços', 'pernas', 'glúteos', 'core', 'cardio', 'corpo inteiro'
 ]
 
 const EQUIPMENT = [
@@ -15,7 +15,11 @@ const EQUIPMENT = [
     { id: 'banco', name: 'Banco de Bench' },
     { id: 'elásticos', name: 'Elásticos/Resistências' },
     { id: 'bola medicinal', name: 'Bola Medicinal (Wall-balls)' },
-    { id: 'caixa', name: 'Caixa (Box Jumps)' }
+    { id: 'caixa', name: 'Caixa (Box Jumps)' },
+    { id: 'cabo (polia)', name: 'Cabo / Polia' },
+    { id: 'máquina', name: 'Máquina (Leverage)' },
+    { id: 'smith machine', name: 'Smith Machine' },
+    { id: 'bola suíça', name: 'Bola Suíça (Stability Ball)' }
 ]
 
 const TIME_PRESETS = [15, 30, 45, 60]
@@ -89,7 +93,7 @@ export default function WorkoutForm({ onGenerate, profile, onBack }) {
     }
 
     const feelingLucky = () => {
-        const randomTime = [15, 20, 30, 45, 60][Math.floor(Math.random() * 5)]
+        const randomTime = [30, 45, 60][Math.floor(Math.random() * 3)]
         const allMuscles = ['peito', 'costas', 'ombros', 'pernas', 'glúteos', 'core', 'corpo inteiro']
         const randomMuscles = Math.random() > 0.4
             ? ['corpo inteiro']

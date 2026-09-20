@@ -77,6 +77,126 @@ const UserMenu = ({ user, theme, toggleTheme, onLogout, onPasswordChange }) => {
     );
 };
 
+// Definido ao nivel do modulo, e nao dentro de App(): se ficasse la dentro,
+// cada render de App criava um tipo de componente novo e o React desmontava e
+// remontava a dashboard inteira (flicker + perda de estado dos filhos).
+const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAbandonPlan, stats, setView, activePlans, setWorkoutData, boxName, profile, handleUnpin, onPasswordChange }) => (
+    <div className="workout-dashboard animate-fade">
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div>
+                <p style={{ fontSize: '0.9rem', marginBottom: '0.2rem', opacity: 0.6 }}>Bem-vindo de volta,</p>
+                <h2 style={{ margin: 0, fontWeight: 900, fontSize: '1.8rem' }}>{currentUser.name.split(' ')[0]}</h2>
+                {boxName && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '0.4rem', color: 'var(--primary-color)', fontWeight: 800, fontSize: '0.85rem' }}>
+                        <Users size={14} /> {boxName}
+                    </div>
+                )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <NotificationBell userId={currentUser.id} />
+                <UserMenu 
+                    user={currentUser} 
+                    theme={theme} 
+                    toggleTheme={toggleTheme} 
+                    onLogout={handleLogout} 
+                    onPasswordChange={onPasswordChange}
+                />
+            </div>
+        </header>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="stat-box">
+                <label><TrendingUp size={16} color="var(--primary-color)" /> Streak</label>
+                <div className="value">{stats?.streak || 0} Dias</div>
+            </div>
+            <div className="stat-box">
+                <label><Trophy size={16} color="#f59e0b" /> Pontos</label>
+                <div className="value">{(stats?.points || 0).toLocaleString()}</div>
+            </div>
+        </div>
+
+        <div className="premium-card" style={{
+            background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)',
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden',
+            marginBottom: '1.5rem',
+            border: 'none',
+            cursor: 'pointer'
+        }} onClick={() => setView('form')}>
+            <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.2rem' }}>
+                    <Sparkles size={16} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>IA Inteligente</span>
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Gerar Treino de Hoje</h3>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1rem' }}>Sessão isolada para dias sem plano ou extra.</p>
+            </div>
+            <Dumbbell size={100} style={{ position: 'absolute', right: '-10px', bottom: '-10px', opacity: 0.15, transform: 'rotate(-20deg)' }} />
+        </div>
+
+        {profile?.pinnedWorkout && (
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '0.9rem', textTransform: 'uppercase', opacity: 0.6, margin: 0, fontWeight: 800 }}>📌 Treino Fixado</h4>
+                    <button onClick={(e) => { e.stopPropagation(); handleUnpin(); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Remover</button>
+                </div>
+                <div className="premium-card" style={{ 
+                    padding: '1.25rem', 
+                    border: '2px solid var(--primary-color)',
+                    background: 'var(--primary-glow)',
+                    cursor: 'pointer'
+                }} onClick={() => { setWorkoutData(profile.pinnedWorkout); setView('workout'); }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: 0, fontWeight: 900, fontSize: '1.2rem', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>{profile.pinnedWorkout.summary?.structure || 'Sessão Personalizada'}</h4>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--primary-color)', opacity: 0.8, fontWeight: 600 }}>
+                                {profile.pinnedWorkout.duration || profile.pinnedWorkout.totalTime} min • {profile.pinnedWorkout.summary?.type || 'Treino'}
+                            </p>
+                         </div>
+                         <div style={{ background: 'var(--primary-color)', color: 'white', width: '44px', height: '44px', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px var(--primary-glow)' }}>
+                            <Play size={20} fill="currentColor" />
+                         </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {activePlans.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{ fontSize: '0.9rem', textTransform: 'uppercase', opacity: 0.6, marginBottom: '1rem', fontWeight: 800 }}>Planos em Curso</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {activePlans.map(plan => (
+                        <div key={plan.id} className="premium-card flex-between" style={{ padding: '1.25rem', borderLeft: '4px solid var(--primary-color)', cursor: 'pointer' }} onClick={() => { setWorkoutData({ planId: plan.id }); setView('calendar'); }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ background: 'var(--primary-glow)', padding: '0.6rem', borderRadius: '0.75rem' }}>
+                                    <Calendar size={20} color="var(--primary-color)" />
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem' }}>{plan.title}</h4>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>{plan.workouts?.filter(w => w.completed).length}/{plan.workouts?.length} treinos concluídos</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} opacity={0.3} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+            <div className="premium-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('box')}>
+                <Users size={24} style={{ margin: '0 auto 0.5rem', color: 'var(--primary-color)' }} />
+                <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>Box / Aulas</div>
+            </div>
+            <div className="premium-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('history')}>
+                <TrendingUp size={24} style={{ margin: '0 auto 0.5rem', color: 'var(--primary-color)' }} />
+                <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>Progresso</div>
+            </div>
+        </div>
+    </div>
+);
+
 function App() {
     const [view, setView] = useState('home')
     const [currentUser, setCurrentUser] = useState(() => {
@@ -147,6 +267,12 @@ function App() {
                 if (userData.profile) {
                     setProfile(userData.profile);
                     localStorage.setItem('user_profile', JSON.stringify(userData.profile));
+                    // Espelhar Spotify URL vindo da BD para localStorage (usado pela vista AirPlay)
+                    if (userData.profile.spotifyUrl) {
+                        localStorage.setItem('fittraining_spotify_url', userData.profile.spotifyUrl);
+                    } else {
+                        localStorage.removeItem('fittraining_spotify_url');
+                    }
                 }
 
                 // Update currentUser if boxId or role changed
@@ -248,131 +374,15 @@ function App() {
         }
     };
 
-    const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAbandonPlan, stats, setView, activePlans, setWorkoutData, boxName }) => (
-        <div className="workout-dashboard animate-fade">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div>
-                    <p style={{ fontSize: '0.9rem', marginBottom: '0.2rem', opacity: 0.6 }}>Bem-vindo de volta,</p>
-                    <h2 style={{ margin: 0, fontWeight: 900, fontSize: '1.8rem' }}>{currentUser.name.split(' ')[0]}</h2>
-                    {boxName && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '0.4rem', color: 'var(--primary-color)', fontWeight: 800, fontSize: '0.85rem' }}>
-                            <Users size={14} /> {boxName}
-                        </div>
-                    )}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <NotificationBell userId={currentUser.id} />
-                    <UserMenu 
-                        user={currentUser} 
-                        theme={theme} 
-                        toggleTheme={toggleTheme} 
-                        onLogout={handleLogout} 
-                        onPasswordChange={() => setShowPasswordModal(true)}
-                    />
-                </div>
-            </header>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div className="stat-box">
-                    <label><TrendingUp size={16} color="var(--primary-color)" /> Streak</label>
-                    <div className="value">{stats?.streak || 0} Dias</div>
-                </div>
-                <div className="stat-box">
-                    <label><Trophy size={16} color="#f59e0b" /> Pontos</label>
-                    <div className="value">{(stats?.points || 0).toLocaleString()}</div>
-                </div>
-            </div>
-
-            <div className="premium-card" style={{
-                background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)',
-                color: 'white',
-                position: 'relative',
-                overflow: 'hidden',
-                marginBottom: '1.5rem',
-                border: 'none',
-                cursor: 'pointer'
-            }} onClick={() => setView('form')}>
-                <div style={{ position: 'relative', zIndex: 2 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.2rem' }}>
-                        <Sparkles size={16} />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>IA Inteligente</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Gerar Treino de Hoje</h3>
-                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1rem' }}>Sessão isolada para dias sem plano ou extra.</p>
-                </div>
-                <Dumbbell size={100} style={{ position: 'absolute', right: '-10px', bottom: '-10px', opacity: 0.15, transform: 'rotate(-20deg)' }} />
-            </div>
-
-            {profile?.pinnedWorkout && (
-                <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h4 style={{ fontSize: '0.9rem', textTransform: 'uppercase', opacity: 0.6, margin: 0, fontWeight: 800 }}>📌 Treino Fixado</h4>
-                        <button onClick={(e) => { e.stopPropagation(); handleUnpin(); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Remover</button>
-                    </div>
-                    <div className="premium-card" style={{ 
-                        padding: '1.25rem', 
-                        border: '2px solid var(--primary-color)',
-                        background: 'var(--primary-glow)',
-                        cursor: 'pointer'
-                    }} onClick={() => { setWorkoutData(profile.pinnedWorkout); setView('workout'); }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                             <div style={{ flex: 1 }}>
-                                <h4 style={{ margin: 0, fontWeight: 900, fontSize: '1.2rem', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>{profile.pinnedWorkout.summary?.structure || 'Sessão Personalizada'}</h4>
-                                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--primary-color)', opacity: 0.8, fontWeight: 600 }}>
-                                    {profile.pinnedWorkout.duration || profile.pinnedWorkout.totalTime} min • {profile.pinnedWorkout.summary?.type || 'Treino'}
-                                </p>
-                             </div>
-                             <div style={{ background: 'var(--primary-color)', color: 'white', width: '44px', height: '44px', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px var(--primary-glow)' }}>
-                                <Play size={20} fill="currentColor" />
-                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activePlans.length > 0 && (
-                <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ fontSize: '0.9rem', textTransform: 'uppercase', opacity: 0.6, marginBottom: '1rem', fontWeight: 800 }}>Planos em Curso</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {activePlans.map(plan => (
-                            <div key={plan.id} className="premium-card flex-between" style={{ padding: '1.25rem', borderLeft: '4px solid var(--primary-color)', cursor: 'pointer' }} onClick={() => { setWorkoutData({ planId: plan.id }); setView('calendar'); }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ background: 'var(--primary-glow)', padding: '0.6rem', borderRadius: '0.75rem' }}>
-                                        <Calendar size={20} color="var(--primary-color)" />
-                                    </div>
-                                    <div>
-                                        <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem' }}>{plan.title}</h4>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>{plan.workouts?.filter(w => w.completed).length}/{plan.workouts?.length} treinos concluídos</p>
-                                    </div>
-                                </div>
-                                <ChevronRight size={20} opacity={0.3} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                <div className="premium-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('box')}>
-                    <Users size={24} style={{ margin: '0 auto 0.5rem', color: 'var(--primary-color)' }} />
-                    <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>Box / Aulas</div>
-                </div>
-                <div className="premium-card" style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => setView('history')}>
-                    <TrendingUp size={24} style={{ margin: '0 auto 0.5rem', color: 'var(--primary-color)' }} />
-                    <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>Progresso</div>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
         <div className="app-shell" style={{ paddingBottom: '120px' }}>
             <main className="container animate-fade">
                 {generating && (
                     <div className="glass" style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
+                        paddingTop: '20vh',
                         zIndex: 9999, gap: '2rem', padding: '2rem', border: 'none'
                     }}>
                         <div style={{
@@ -381,8 +391,8 @@ function App() {
                             animation: 'spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite'
                         }} />
                         <div style={{ textAlign: 'center' }}>
-                            <h2 style={{ marginBottom: '0.5rem' }}>🤖 A moldar o teu treino...</h2>
-                            <p style={{ maxWidth: '320px', margin: '0 auto' }}>A IA está a otimizar cada repetição para os teus objetivos.</p>
+                            <h2 style={{ marginBottom: '0.5rem', fontWeight: 900 }}>🤖 A moldar o teu treino...</h2>
+                            <p style={{ maxWidth: '320px', margin: '0 auto', opacity: 0.7 }}>A IA está a otimizar cada repetição para os teus objetivos.</p>
                         </div>
                     </div>
                 )}
@@ -418,6 +428,9 @@ function App() {
                                         activePlans={activePlans}
                                         setWorkoutData={setWorkoutData}
                                         boxName={boxName}
+                                        profile={profile}
+                                        handleUnpin={handleUnpin}
+                                        onPasswordChange={() => setShowPasswordModal(true)}
                                     />
                                 )}
                                 {view === 'form' && <WorkoutForm onGenerate={handleGenerate} profile={profile} onBack={() => setView('home')} />}
