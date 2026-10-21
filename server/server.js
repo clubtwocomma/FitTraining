@@ -181,10 +181,26 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Chaves do perfil geridas por endpoints próprios (objetivos e check-ins diários).
+// O PATCH do perfil substitui o objeto inteiro, por isso estas chaves são preservadas
+// quando o cliente não as envia, para que guardar as definições não as apague.
+const SERVER_MANAGED_PROFILE_KEYS = ['goals', 'checkins'];
+
+const mergeProfile = async (userId, patch) => {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { profile: true } });
+  const current = user?.profile || {};
+  return prisma.user.update({ where: { id: userId }, data: { profile: { ...current, ...patch } } });
+};
+
 app.patch('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
     const { profile } = req.body;
-    const user = await updateProfile(req.user.userId, profile);
+    const existing = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { profile: true } });
+    const preserved = {};
+    SERVER_MANAGED_PROFILE_KEYS.forEach(k => {
+      if (profile && !(k in profile) && existing?.profile?.[k] !== undefined) preserved[k] = existing.profile[k];
+    });
+    const user = await updateProfile(req.user.userId, { ...profile, ...preserved });
     res.json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1434,10 +1450,18 @@ app.post('/api/generate-plan', authenticateToken, aiLimiter, async (req, res) =>
     }
 
     // ── 3. Montar state_today a partir do frontend ─────────────────────────────
+    // Se o utilizador fez o check-in de hoje, usa-o quando o questionário não traz o valor.
+    const profileRow = await prisma.user.findUnique({ where: { id: userId }, select: { profile: true } });
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const checkin = profileRow?.profile?.checkins?.[todayKey];
+    const level = (v) => (v == null ? null : v <= 2 ? 'baixo' : v >= 4 ? 'alto' : 'normal');
     const stateToday = {
-      energy: data.energy || 'normal',
-      sleep_hours: parseInt(data.sleep_hours) || 7,
-      stress: data.stress || 'normal',
+      energy: data.energy || level(checkin?.energy) || 'normal',
+      sleep_hours: parseInt(data.sleep_hours) || checkin?.sleep || 7,
+      stress: data.stress || level(checkin?.stress) || 'normal',
+      ...(checkin?.soreness != null && { soreness_1_to_5: checkin.soreness }),
+      ...(checkin?.restingHr != null && { resting_hr: checkin.restingHr }),
+      ...(checkin?.hrv != null && { hrv_ms: checkin.hrv }),
       days_since_rest: daysSinceRest
     };
 
@@ -1464,6 +1488,20 @@ app.post('/api/workouts/:workoutId/complete', authenticateToken, async (req, res
     const workoutId = parseInt(req.params.workoutId);
     const { rpe, completed, notes } = req.body;
     const userId = req.user.userId;
+
+    // Dados opcionais do registo detalhado (sensação, duração real e séries feitas).
+    // Ficam no JSON de notes, como o resto do feedback; valores fora dos limites são descartados.
+    const num = (v, min, max) => { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max ? n : null; };
+    const feel = num(req.body.feel, 1, 5);
+    const durationMin = num(req.body.durationMin, 1, 600);
+    const setLog = Array.isArray(req.body.sets) ? req.body.sets.slice(0, 60).map(ex => ({
+      name: String(ex?.name || '').slice(0, 120),
+      sets: (Array.isArray(ex?.sets) ? ex.sets : []).slice(0, 20).map(st => ({
+        reps: num(st?.reps, 0, 1000),
+        kg: num(st?.kg, 0, 1000),
+        done: !!st?.done
+      }))
+    })).filter(ex => ex.name && ex.sets.length) : null;
 
     // Verify ownership
     const workout = await prisma.scheduledWorkout.findFirst({
@@ -1513,6 +1551,9 @@ app.post('/api/workouts/:workoutId/complete', authenticateToken, async (req, res
           rpe,
           completed,
           comment: notes || '',
+          ...(feel != null && { feel }),
+          ...(durationMin != null && { durationMin }),
+          ...(setLog?.length && { sets: setLog }),
           aiProcessed: processedFeedback
         })
       }
@@ -1523,6 +1564,75 @@ app.post('/api/workouts/:workoutId/complete', authenticateToken, async (req, res
   } catch (err) {
     console.error('[Feedback] Error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Objetivos: evento-alvo com contagem decrescente e meta semanal ───────────
+app.put('/api/profile/goals', authenticateToken, async (req, res) => {
+  try {
+    const { event, weeklyTarget } = req.body || {};
+    const goals = {};
+    if (event && typeof event === 'object') {
+      const name = String(event.name || '').trim().slice(0, 80);
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(event.date || '') ? event.date : null;
+      if (!name || !date) return res.status(400).json({ error: 'O evento precisa de nome e data (AAAA-MM-DD).' });
+      goals.event = { name, date };
+    }
+    if (weeklyTarget && typeof weeklyTarget === 'object') {
+      const workouts = parseInt(weeklyTarget.workouts, 10);
+      const minutes = parseInt(weeklyTarget.minutes, 10);
+      goals.weeklyTarget = {
+        workouts: workouts >= 1 && workouts <= 14 ? workouts : null,
+        minutes: minutes >= 10 && minutes <= 3000 ? minutes : null
+      };
+    }
+    const user = await mergeProfile(req.user.userId, { goals });
+    res.json(user.profile.goals);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ─── Check-in diário (sono, energia, stress, dores, FC em repouso) ────────────
+// Guarda os últimos 120 dias no perfil; alimenta o gráfico de bem-estar e o plano da IA.
+app.post('/api/profile/checkin', authenticateToken, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || '') ? b.date : null;
+    if (!date) return res.status(400).json({ error: 'Data inválida.' });
+    const num = (v, min, max) => { const n = Number(v); return v !== null && v !== '' && Number.isFinite(n) && n >= min && n <= max ? n : null; };
+    const entry = {
+      sleep: num(b.sleep, 0, 16),
+      energy: num(b.energy, 1, 5),
+      stress: num(b.stress, 1, 5),
+      soreness: num(b.soreness, 1, 5),
+      restingHr: num(b.restingHr, 25, 140),
+      hrv: num(b.hrv, 5, 300)
+    };
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { profile: true } });
+    const checkins = { ...(user?.profile?.checkins || {}), [date]: entry };
+    const trimmed = Object.fromEntries(Object.entries(checkins).sort(([a], [b2]) => b2.localeCompare(a)).slice(0, 120));
+    await mergeProfile(req.user.userId, { checkins: trimmed });
+    res.json({ date, ...entry });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ─── Mover um treino planeado para outro dia ──────────────────────────────────
+app.patch('/api/workouts/:workoutId/date', authenticateToken, async (req, res) => {
+  try {
+    const workoutId = parseInt(req.params.workoutId);
+    const { date } = req.body || {};
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return res.status(400).json({ error: 'Data inválida (AAAA-MM-DD).' });
+    const workout = await prisma.scheduledWorkout.findFirst({ where: { id: workoutId, plan: { userId: req.user.userId } } });
+    if (!workout) return res.status(404).json({ error: 'Treino não encontrado.' });
+    if (workout.completed) return res.status(409).json({ error: 'Não é possível mover um treino já concluído.' });
+    // Meia-noite UTC do dia escolhido, o mesmo formato com que os planos são criados.
+    const updated = await prisma.scheduledWorkout.update({ where: { id: workoutId }, data: { date: new Date(`${date}T00:00:00.000Z`) } });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

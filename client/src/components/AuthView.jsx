@@ -1,6 +1,35 @@
 import React, { useState } from 'react';
-import { User, Lock, Mail, ChevronRight, Flame } from 'lucide-react';
+import { User, Lock, Mail, ChevronRight, Flame, Eye, EyeOff, X } from 'lucide-react';
 import { apiFetch } from '../lib/api';
+
+const iconBtnStyle = {
+    background: 'none', border: 'none', padding: '0.35rem', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.45, color: 'inherit'
+};
+
+function PasswordInput({ value, onChange }) {
+    const [visible, setVisible] = useState(false);
+    return (
+        <div style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
+            <input
+                type={visible ? 'text' : 'password'} required value={value} onChange={(e) => onChange(e.target.value)} placeholder="••••••••"
+                autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                style={{ width: '100%', padding: '1rem 5.5rem 1rem 3rem', borderRadius: '1rem', border: '1px solid var(--surface-color)', background: '#f8fafc' }}
+            />
+            <div style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '0.15rem' }}>
+                {value && (
+                    <button type="button" onClick={() => onChange('')} aria-label="Apagar password" title="Apagar" style={iconBtnStyle}>
+                        <X size={18} />
+                    </button>
+                )}
+                <button type="button" onClick={() => setVisible(v => !v)} aria-label={visible ? 'Ocultar password' : 'Mostrar password'} title={visible ? 'Ocultar' : 'Mostrar'} style={iconBtnStyle}>
+                    {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export default function AuthView({ onLoginSuccess }) {
     const [view, setView] = useState('login'); // login | register | forgot | reset
@@ -164,26 +193,14 @@ export default function AuthView({ onLoginSuccess }) {
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 700, opacity: 0.7 }}>
                                 {view === 'reset' ? 'Nova Password' : 'Palavra-passe'}
                             </label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                                <input
-                                    type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-                                    style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', borderRadius: '1rem', border: '1px solid var(--surface-color)', background: '#f8fafc' }}
-                                />
-                            </div>
+                            <PasswordInput value={password} onChange={setPassword} />
                         </div>
                     )}
 
                     {view === 'reset' && (
                         <div className="input-group">
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 700, opacity: 0.7 }}>Confirmar Nova Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                                <input
-                                    type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
-                                    style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', borderRadius: '1rem', border: '1px solid var(--surface-color)', background: '#f8fafc' }}
-                                />
-                            </div>
+                            <PasswordInput value={confirmPassword} onChange={setConfirmPassword} />
                         </div>
                     )}
 

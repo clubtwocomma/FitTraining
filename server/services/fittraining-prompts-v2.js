@@ -414,6 +414,7 @@ ${modality === 'hyrox' && athleteProfile.athlete.hyrox_division ? "Divisão HYRO
         "weight_scaled": "string — % RM ajustado ao atleta + intensity_modifier",
         "tempo": "string — ex: '3-1-2-0' (excêntrico-pausa baixo-concêntrico-pausa topo)",
         "rest_seconds": 0,
+        "superset": "string|null — letra partilhada pelos exercícios feitos seguidos, sem descanso entre eles (ex: 'C' em dois exercícios consecutivos = C1 e C2). null se o exercício for isolado. Usa supersets só quando fizer sentido (antagonistas, acessórios, metcon).",
         "safety_notes": "string — mínimo 4 passos numerados de execução técnica",
         "adaptation": "string — alternativa concreta sem o equipamento ou máquina",
         "progression_note": "string — como progredir na próxima sessão"
@@ -534,6 +535,7 @@ ${planConfig.history && planConfig.history.length > 0
           "sets": 0, "reps": "string",
           "weight_rx": "string", "weight_scaled": "string",
           "rest_seconds": 0,
+          "superset": "string|null — letra partilhada pelos exercícios feitos seguidos, sem descanso entre eles (ex: 'C' em dois exercícios consecutivos = C1 e C2). null se o exercício for isolado. Usa supersets só quando fizer sentido (antagonistas, acessórios, metcon).",
           "safety_notes": "string",
           "adaptation": "string"
         }

@@ -16,6 +16,105 @@ import NotificationBell from './components/NotificationBell'
 import { MoonStar, SunDim, Power, BellRing, Info, Dumbbell, Settings, Calendar, Play, Medal, Flame, BookOpen, LayoutGrid, Users, ChevronRight, Trophy, TrendingUp, Sparkles, Clock, User, ShieldCheck } from 'lucide-react'
 import PasswordChangeModal from './components/PasswordChangeModal'
 import { apiFetch } from './lib/api'
+import { FormPills, WeekStrip, StructureBar, StatusBadge, formAdvice } from './components/training/TrainingUI'
+import { localKey, workoutDayKey, workoutStatus, isBoxResult, performanceSeries, resultLoad } from './lib/training'
+import { CheckinCard, EventCountdown, GoalsModal } from './components/training/HomeCards'
+
+// Cartão "Esta semana" do início: dias do plano com o estado de cada um e a forma atual.
+const WeekCard = ({ activePlans, history, setView, setWorkoutData, goals, onEditGoals }) => {
+    const plan = activePlans[0];
+    const monday = new Date(); monday.setHours(0, 0, 0, 0); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    const todayKey = localKey(new Date());
+    const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(monday); d.setDate(monday.getDate() + i);
+        const key = localKey(d);
+        const w = plan?.workouts?.find(x => workoutDayKey(x, plan) === key);
+        return { key, d, num: d.getDate(), isToday: key === todayKey, label: d.toLocaleDateString('pt-PT', { weekday: 'short' }).slice(0, 3), status: w ? workoutStatus(w, plan) : null };
+    });
+    const todayWorkout = plan?.workouts?.find(x => workoutDayKey(x, plan) === todayKey);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowWorkout = plan?.workouts?.find(x => workoutDayKey(x, plan) === localKey(tomorrow));
+    const todayStatus = todayWorkout ? workoutStatus(todayWorkout, plan) : null;
+    const mine = history.filter(h => !isBoxResult(h));
+    const series = performanceSeries(mine, 1);
+    const now = series[series.length - 1];
+    const target = goals?.weeklyTarget;
+    const thisWeek = mine.filter(h => new Date(h.createdAt) >= monday);
+    const weekMin = thisWeek.reduce((s, h) => s + resultLoad(h).minutes, 0);
+    const bars = [
+        target?.workouts && { label: 'Treinos', value: thisWeek.length, max: target.workouts, unit: '' },
+        target?.minutes && { label: 'Minutos', value: weekMin, max: target.minutes, unit: ' min' }
+    ].filter(Boolean);
+
+    return (
+        <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
+                <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0, fontWeight: 800, letterSpacing: '0.06em' }}>Esta semana</h4>
+                {plan && <button onClick={() => { setWorkoutData({ planId: plan.id }); setView('calendar'); }} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}>Ver plano <ChevronRight size={14} /></button>}
+            </div>
+            {bars.length > 0 ? (
+                <div onClick={onEditGoals} style={{ display: 'grid', gridTemplateColumns: `repeat(${bars.length}, 1fr)`, gap: '0.75rem', marginBottom: '0.9rem', cursor: 'pointer' }}>
+                    {bars.map(b => {
+                        const pct = Math.min(100, Math.round(b.value / b.max * 100));
+                        return (
+                            <div key={b.label}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: 800, marginBottom: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>{b.label}</span>
+                                    <span style={{ color: pct >= 100 ? '#16a34a' : 'var(--text-main)' }}>{b.value}/{b.max}{b.unit}</span>
+                                </div>
+                                <div style={{ height: '6px', borderRadius: '999px', background: 'var(--surface-color)', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, borderRadius: '999px', background: pct >= 100 ? '#16a34a' : 'var(--primary-color)', transition: 'width 0.4s ease' }} />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <button onClick={onEditGoals} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', padding: 0, marginBottom: '0.75rem' }}>+ Definir meta semanal</button>
+            )}
+            <WeekStrip days={days} selectedKey={todayKey} onSelect={plan ? () => { setWorkoutData({ planId: plan.id }); setView('calendar'); } : undefined} />
+            {todayWorkout && todayStatus !== 'rest' && (
+                <div
+                    onClick={() => { setWorkoutData({ ...todayWorkout.content, scheduledWorkoutId: todayWorkout.id }); setView('workout'); }}
+                    style={{ marginTop: '1rem', padding: '1rem', borderRadius: '1.25rem', background: 'var(--surface-color)', cursor: 'pointer' }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ minWidth: 0 }}>
+                            <StatusBadge status={todayStatus} />
+                            <div style={{ fontWeight: 900, fontSize: '1.05rem', marginTop: '0.35rem' }}>{todayWorkout.focus}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{todayWorkout.content?.duration} · {todayWorkout.content?.exercises?.length || 0} exercícios</div>
+                        </div>
+                        <div style={{ background: 'var(--primary-color)', color: 'white', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px -4px var(--primary-color)' }}>
+                            <Play size={18} fill="currentColor" style={{ marginLeft: '3px' }} />
+                        </div>
+                    </div>
+                    <StructureBar data={todayWorkout.content} height={28} />
+                </div>
+            )}
+            {tomorrowWorkout && (
+                <div
+                    onClick={() => { setWorkoutData({ ...tomorrowWorkout.content, scheduledWorkoutId: tomorrowWorkout.id }); setView('workout'); }}
+                    style={{ marginTop: '0.6rem', padding: '0.75rem 1rem', borderRadius: '1rem', border: '1.5px dashed var(--surface-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                >
+                    <span style={{ fontSize: '0.62rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', flexShrink: 0 }}>Amanhã</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tomorrowWorkout.focus}</div>
+                        {workoutStatus(tomorrowWorkout, plan) === 'rest'
+                            ? <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Dia de recuperação</div>
+                            : <div style={{ marginTop: '4px' }}><StructureBar data={tomorrowWorkout.content} height={14} /></div>}
+                    </div>
+                    {workoutStatus(tomorrowWorkout, plan) !== 'rest' && tomorrowWorkout.content?.duration && tomorrowWorkout.content.duration !== '-' && (
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0 }}>{tomorrowWorkout.content.duration}</span>
+                    )}
+                </div>
+            )}
+            <div onClick={() => setView('history')} style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-color)', cursor: 'pointer' }}>
+                <FormPills point={now} />
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.6rem 0 0', fontWeight: 600 }}>{history.length ? formAdvice(now?.tsb) : 'Conclui treinos e indica o esforço (RPE) para veres a tua forma.'}</p>
+            </div>
+        </div>
+    );
+};
 
 const UserMenu = ({ user, theme, toggleTheme, onLogout, onPasswordChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -80,7 +179,7 @@ const UserMenu = ({ user, theme, toggleTheme, onLogout, onPasswordChange }) => {
 // Definido ao nivel do modulo, e nao dentro de App(): se ficasse la dentro,
 // cada render de App criava um tipo de componente novo e o React desmontava e
 // remontava a dashboard inteira (flicker + perda de estado dos filhos).
-const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAbandonPlan, stats, setView, activePlans, setWorkoutData, boxName, profile, handleUnpin, onPasswordChange }) => (
+const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAbandonPlan, stats, setView, activePlans, setWorkoutData, boxName, profile, handleUnpin, onPasswordChange, history, onProfilePatch, onEditGoals }) => (
     <div className="workout-dashboard animate-fade">
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <div>
@@ -104,6 +203,15 @@ const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAb
             </div>
         </header>
 
+        <CheckinCard
+            key={profile?.checkins?.[localKey(new Date())] ? 'feito' : 'por-fazer'}
+            checkins={profile?.checkins}
+            tsb={performanceSeries(history.filter(h => !isBoxResult(h)), 1).slice(-1)[0]?.tsb}
+            onSaved={(checkins) => onProfilePatch({ checkins })}
+        />
+
+        <EventCountdown goals={profile?.goals} onEdit={onEditGoals} />
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="stat-box">
                 <label><TrendingUp size={16} color="var(--primary-color)" /> Streak</label>
@@ -114,6 +222,8 @@ const HomeDashboard = ({ currentUser, toggleTheme, theme, handleLogout, handleAb
                 <div className="value">{(stats?.points || 0).toLocaleString()}</div>
             </div>
         </div>
+
+        <WeekCard activePlans={activePlans} history={history} setView={setView} setWorkoutData={setWorkoutData} goals={profile?.goals} onEditGoals={onEditGoals} />
 
         <div className="premium-card" style={{
             background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)',
@@ -212,9 +322,17 @@ function App() {
     })
     const [activePlans, setActivePlans] = useState([])
     const [stats, setStats] = useState({ points: 0, streak: 0 })
+    const [history, setHistory] = useState([])
     const [boxName, setBoxName] = useState('')
     const [boxData, setBoxData] = useState(null)
     const [showPasswordModal, setShowPasswordModal] = useState(false)
+    const [showGoals, setShowGoals] = useState(false)
+    // Atualiza só as chaves indicadas do perfil local (o servidor já gravou).
+    const patchProfile = (patch) => setProfile(prev => {
+        const next = { ...prev, ...patch }
+        localStorage.setItem('user_profile', JSON.stringify(next))
+        return next
+    })
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme)
@@ -226,6 +344,7 @@ function App() {
             syncProfile();
             fetchActivePlans();
             fetchStats();
+            if (view === 'home') fetchHistory();
             if (currentUser.boxId) fetchBoxData();
         }
     }, [currentUser, view]);
@@ -246,6 +365,14 @@ function App() {
             const res = await apiFetch('/plans/active');
             const data = await res.json();
             setActivePlans(Array.isArray(data) ? data : []);
+        } catch (err) { console.error(err); }
+    }
+
+    const fetchHistory = async () => {
+        try {
+            const res = await apiFetch('/history');
+            const data = await res.json();
+            setHistory(Array.isArray(data) ? data : []);
         } catch (err) { console.error(err); }
     }
 
@@ -431,6 +558,9 @@ function App() {
                                         profile={profile}
                                         handleUnpin={handleUnpin}
                                         onPasswordChange={() => setShowPasswordModal(true)}
+                                        history={history}
+                                        onProfilePatch={patchProfile}
+                                        onEditGoals={() => setShowGoals(true)}
                                     />
                                 )}
                                 {view === 'form' && <WorkoutForm onGenerate={handleGenerate} profile={profile} onBack={() => setView('home')} />}
@@ -447,7 +577,7 @@ function App() {
                                 {view === 'about' && <AboutPage onBack={() => setView('home')} />}
                                 {view === 'settings' && <SettingsView onBack={() => setView('home')} onSave={(d) => setProfile(d.profile)} onSwitchView={setView} user={currentUser} />}
                                 {view === 'planner' && <TrainingPlanner onBack={() => setView('home')} profile={profile} />}
-                                {view === 'history' && <HistoryView onBack={() => setView('home')} />}
+                                {view === 'history' && <HistoryView onBack={() => setView('home')} profile={profile} />}
                                 {view === 'benchmarks' && <BenchmarksView onBack={() => setView('home')} onStartWorkout={(w) => { setWorkoutData(w); setView('workout'); }} />}
                                 {view === 'library' && <CustomLibrary onBack={() => setView('home')} />}
                                 {view === 'box' && <BoxView user={currentUser} onBack={() => setView('home')} />}
@@ -500,6 +630,7 @@ function App() {
                 </div>
             )}
             {showPasswordModal && <PasswordChangeModal onClose={() => setShowPasswordModal(false)} />}
+            {showGoals && <GoalsModal goals={profile?.goals} onClose={() => setShowGoals(false)} onSaved={(goals) => patchProfile({ goals })} />}
         </div>
     )
 }

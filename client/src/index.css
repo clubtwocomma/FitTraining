@@ -570,7 +570,7 @@ tr:last-child td {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: var(--accent-color);
+  background-color: var(--dot, var(--accent-color));
 }
 
 .calendar-day.selected.has-workout::after {

@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, History, Trophy, TrendingUp, Calendar, Clock, Dumbbell, Save, Plus, Flame, Medal, Award } from 'lucide-react';
 import { apiFetch } from '../lib/api';
+import { isBoxResult, performanceSeries, resultLoad, setLogSummary, METRIC_COLORS, localKey, peakPerformances, rampRates, weeklySummaries, readinessScore, timeByCategory } from '../lib/training';
+import { PerformanceChart, FormPills, MetricStat, CategoryDonut, formAdvice } from './training/TrainingUI';
+
+// Resultado livre ("56:45", "85kg", "30") com a unidade e o tipo explícitos.
+const formatScore = (score) => {
+    const t = String(score ?? '').trim();
+    const time = t.match(/^(\d{1,3}):(\d{2})$/);
+    if (time) return { value: `${parseInt(time[1], 10)} min ${time[2]} s`, label: 'tempo' };
+    const kg = t.match(/^(\d+(?:[.,]\d+)?)\s*kg$/i);
+    if (kg) return { value: `${kg[1]} kg`, label: 'carga' };
+    return { value: t || '—', label: 'resultado' };
+};
+
+const RANGES = [{ days: 42, label: '6 sem' }, { days: 90, label: '3 meses' }, { days: 180, label: '6 meses' }];
 
 const DEFAULT_LIFTS = [
     { id: 'back_squat', name: 'Back Squat' },
@@ -25,13 +39,17 @@ const WOD_BENCHMARKS = [
     { id: 'painstorm_21', name: 'Painstorm XXI' }
 ];
 
-export default function HistoryView({ onBack }) {
+export default function HistoryView({ onBack, profile }) {
     const [activeTab, setActiveTab] = useState('history'); // 'history', 'benchmarks', or 'wods'
     const [history, setHistory] = useState([]);
     const [benchmarks, setBenchmarks] = useState({});
     const [wodPRs, setWodPRs] = useState({});
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [scope, setScope] = useState('mine'); // 'mine' = os meus treinos, 'box' = resultados da box
+    const [range, setRange] = useState(90);
+    const scopedHistory = history.filter(h => scope === 'box' ? isBoxResult(h) : !isBoxResult(h));
+    const weekStartKey = (date) => { const d = new Date(date); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return localKey(d); };
 
     useEffect(() => {
         fetchData();
@@ -128,44 +146,166 @@ export default function HistoryView({ onBack }) {
                     </div>
                 ) : activeTab === 'history' ? (
                     <div className="history-timeline animate-fade">
-                        {history.length > 0 && (
-                            <div className="premium-card" style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(3, 1fr)', 
-                                gap: '10px', 
-                                padding: '1.25rem', 
-                                marginBottom: '2rem',
-                                background: 'linear-gradient(135deg, var(--primary-color), #4f46e5)',
-                                color: 'white',
-                                textAlign: 'center'
-                            }}>
-                                <div>
-                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Total</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{history.length}</div>
-                                </div>
-                                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
-                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Mês</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>
-                                        {history.filter(h => new Date(h.createdAt).getMonth() === new Date().getMonth()).length}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.7rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700 }}>Recordes</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>
-                                        {Object.keys(wodPRs).length + Object.keys(benchmarks).length}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                            {[{ k: 'mine', label: 'Os meus treinos' }, { k: 'box', label: 'Box' }].map(o => (
+                                <button key={o.k} onClick={() => setScope(o.k)} className={`scope-chip ${scope === o.k ? 'active' : ''}`}>{o.label}</button>
+                            ))}
+                        </div>
+                        {(() => {
+                            const mine = history.filter(h => !isBoxResult(h));
+                            const series = performanceSeries(mine, range);
+                            const last = series[series.length - 1];
+                            const weekAgo = series[series.length - 8];
+                            const trend = last && weekAgo ? last.ctl - weekAgo.ctl : 0;
+                            const monday = new Date(); monday.setHours(0, 0, 0, 0); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+                            const thisWeek = mine.filter(h => new Date(h.createdAt) >= monday);
+                            const weekMin = thisWeek.reduce((s, h) => s + resultLoad(h).minutes, 0);
+                            const weekLoad = thisWeek.reduce((s, h) => s + resultLoad(h).load, 0);
+                            const anyEstimated = mine.some(h => resultLoad(h).estimated);
+                            const ramps = rampRates(performanceSeries(mine, 91));
+                            const peaks = peakPerformances(mine);
+                            const weeks = weeklySummaries(mine, 8);
+                            const maxWeekLoad = Math.max(1, ...weeks.map(w => w.load));
+                            const checkins = profile?.checkins || {};
+                            const wellnessDays = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); const k = localKey(d); return { d, k, c: checkins[k] }; });
+                            const hasWellness = wellnessDays.some(w => w.c);
 
-                        {history.length === 0 ? (
+                            return scope === 'mine' && (
+                                <>
+                                    <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>A tua forma</h3>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: trend >= 0 ? '#16a34a' : '#dc2626' }}>
+                                                Forma {trend >= 0 ? '▲' : '▼'} {Math.abs(trend).toFixed(1)} pts em 7 dias
+                                            </span>
+                                        </div>
+                                        <FormPills point={last} size="lg" />
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.75rem 0 0', fontWeight: 600 }}>{formAdvice(last?.tsb)}</p>
+                                        {ramps.length > 0 && (
+                                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ramps.length}, 1fr)`, gap: '0.5rem', marginTop: '0.9rem', paddingTop: '0.9rem', borderTop: '1px solid var(--surface-color)' }}>
+                                                {ramps.map(rr => (
+                                                    <div key={rr.days} style={{ textAlign: 'center' }}>
+                                                        <div style={{ fontWeight: 900, fontSize: '1.05rem', color: rr.delta >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{rr.delta >= 0 ? '+' : ''}{rr.delta.toFixed(1)}<span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '2px' }}>pts</span></div>
+                                                        <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Forma {rr.days} dias</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Gestão de performance</h3>
+                                            <div style={{ display: 'flex', background: 'var(--surface-color)', borderRadius: '0.7rem', padding: '3px' }}>
+                                                {RANGES.map(r => (
+                                                    <button key={r.days} onClick={() => setRange(r.days)} className={`range-btn ${range === r.days ? 'active' : ''}`}>{r.label}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <PerformanceChart series={series} />
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.6rem 0 0', lineHeight: 1.5 }}>
+                                            Carga (pts) = minutos × esforço (RPE). <b style={{ color: METRIC_COLORS.ctl }}>Forma</b> é a média de 42 dias, <b style={{ color: METRIC_COLORS.atl }}>Fadiga</b> a de 7 dias e <b style={{ color: METRIC_COLORS.tsb }}>Frescura</b> a diferença entre as duas.
+                                            {anyEstimated && ' Treinos sem RPE contam como esforço 6 e 45 min.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                        <h3 style={{ margin: '0 0 0.9rem', fontSize: '1rem', fontWeight: 900 }}>
+                                            Tempo por tipo de treino <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>· {RANGES.find(r => r.days === range)?.label}</span>
+                                        </h3>
+                                        <CategoryDonut items={timeByCategory(mine, range)} />
+                                    </div>
+
+                                    {peaks.length > 0 && (
+                                        <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 900 }}>🏆 Recordes pessoais</h3>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                {peaks.slice(0, 6).map(pk => {
+                                                    const recent = (Date.now() - pk.date) / 86400000 <= 14;
+                                                    return (
+                                                        <div key={pk.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.75rem', borderRadius: '0.9rem', background: recent ? 'rgba(245, 158, 11, 0.10)' : 'var(--surface-color)' }}>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontWeight: 800, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pk.name}{recent && <span style={{ marginLeft: '6px', fontSize: '0.6rem', fontWeight: 900, color: '#d97706', background: 'rgba(245,158,11,0.18)', padding: '1px 6px', borderRadius: '999px' }}>NOVO</span>}</div>
+                                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{pk.kg} kg × {pk.reps} · {pk.date.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <div style={{ fontWeight: 900, fontSize: '1.05rem', fontVariantNumeric: 'tabular-nums' }}>{pk.e1rm}<span style={{ fontSize: '0.65rem', opacity: 0.6 }}> kg</span></div>
+                                                                <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>1RM est.</div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                        <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 900 }}>Resumo semanal</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                            {weeks.map((w, i) => (
+                                                <div key={i} style={{ display: 'grid', gridTemplateColumns: '3rem minmax(2rem, 1fr) 11.5rem', alignItems: 'center', gap: '0.5rem', fontSize: '0.72rem', fontWeight: 700 }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>{i === 0 ? 'Esta' : w.start.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span>
+                                                    <div style={{ height: '14px', borderRadius: '4px', background: 'var(--surface-color)', overflow: 'hidden' }}>
+                                                        <div style={{ height: '100%', width: `${w.load / maxWeekLoad * 100}%`, background: METRIC_COLORS.load, opacity: i === 0 ? 0.55 : 0.8, borderRadius: '4px' }} />
+                                                    </div>
+                                                    <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'right' }}>{w.workouts} {w.workouts === 1 ? 'treino' : 'treinos'} · {w.minutes} min · {w.load} pts{w.prs > 0 && <span style={{ color: '#d97706' }}> · {w.prs} PR</span>}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {hasWellness && (
+                                        <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
+                                            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 900 }}>Bem-estar (14 dias)</h3>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: '3px', alignItems: 'end', height: '70px' }}>
+                                                {wellnessDays.map(w => {
+                                                    const score = readinessScore(w.c, null);
+                                                    return (
+                                                        <div key={w.k} title={w.c ? `${w.d.toLocaleDateString('pt-PT')}: prontidão ${score}, sono ${w.c.sleep ?? '—'}h` : 'Sem check-in'} style={{
+                                                            height: w.c ? `${Math.max(8, score || 0)}%` : '6%', borderRadius: '3px',
+                                                            background: w.c ? `hsl(${Math.round((score || 0) * 1.3)} 70% 45%)` : 'var(--surface-color)'
+                                                        }} />
+                                                    );
+                                                })}
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '4px' }}>
+                                                <span>{wellnessDays[0].d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}</span><span>Hoje</span>
+                                            </div>
+                                            {(() => {
+                                                const withSleep = wellnessDays.filter(w => w.c?.sleep != null);
+                                                const avgSleep = withSleep.length ? withSleep.reduce((s, w) => s + w.c.sleep, 0) / withSleep.length : null;
+                                                const withHr = wellnessDays.filter(w => w.c?.restingHr != null);
+                                                const avgHr = withHr.length ? Math.round(withHr.reduce((s, w) => s + w.c.restingHr, 0) / withHr.length) : null;
+                                                const withHrv = wellnessDays.filter(w => w.c?.hrv != null);
+                                                const avgHrv = withHrv.length ? Math.round(withHrv.reduce((s, w) => s + w.c.hrv, 0) / withHrv.length) : null;
+                                                return (
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginTop: '0.9rem' }}>
+                                                        <MetricStat label="Sono médio" value={avgSleep != null ? avgSleep.toFixed(1) : null} unit="h" />
+                                                        <MetricStat label="FC repouso" value={avgHr} unit="bpm" />
+                                                        <MetricStat label="VFC média" value={avgHrv} unit="ms" />
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+
+                                    <div className="premium-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                                        <MetricStat label="Esta semana" value={thisWeek.length} unit={thisWeek.length === 1 ? 'treino' : 'treinos'} />
+                                        <MetricStat label="Tempo" value={weekMin} unit="min" />
+                                        <MetricStat label="Carga" value={weekLoad} unit="pts" color={METRIC_COLORS.load} />
+                                    </div>
+                                </>
+                            );
+                        })()}
+
+                        {scopedHistory.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '4rem 2rem', opacity: 0.5 }}>
                                 <Calendar size={48} style={{ marginBottom: '1rem' }} />
-                                <p>Ainda não tens treinos registados.</p>
+                                <p>{scope === 'box' ? 'Ainda não tens resultados na box.' : 'Ainda não tens treinos registados.'}</p>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {history.map(item => {
+                                {scopedHistory.map((item, idx) => {
                                      let parsedFeedback = null;
                                      if (item.type === 'plan_feedback') {
                                          try {
@@ -183,37 +323,80 @@ export default function HistoryView({ onBack }) {
                                      const tvTitle = tvParts ? tvParts[0] : null;
                                      const detail = tvParts ? tvParts.slice(1).join(' · ') : item.notes;
 
+                                     const wk = weekStartKey(item.createdAt);
+                                     const newWeek = idx === 0 || weekStartKey(scopedHistory[idx - 1].createdAt) !== wk;
+                                     const weekItems = newWeek ? scopedHistory.filter(h => weekStartKey(h.createdAt) === wk) : null;
+                                     const itemLoad = scope === 'mine' ? resultLoad(item) : null;
+
                                      return (
-                                         <div key={item.id} className="premium-card history-item" style={{ 
-                                             padding: '1.25rem', 
-                                             marginBottom: '0.5rem',
+                                         <React.Fragment key={item.id}>
+                                         {newWeek && (
+                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: idx === 0 ? '0 0 0.25rem' : '1rem 0 0.25rem', padding: '0 0.25rem' }}>
+                                                 <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+                                                     Semana de {new Date(wk + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}
+                                                 </span>
+                                                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                                                     {weekItems.length} {weekItems.length === 1 ? 'treino' : 'treinos'}
+                                                     {scope === 'mine' && <> · <span style={{ color: METRIC_COLORS.load }}>carga {weekItems.reduce((s, h) => s + resultLoad(h).load, 0)} pts</span></>}
+                                                 </span>
+                                             </div>
+                                         )}
+                                         <div className="premium-card history-item" style={{ 
+                                             padding: '0.9rem 1rem', 
+                                             borderRadius: '1.25rem',
                                              borderLeft: `4px solid ${parsedFeedback ? '#4f46e5' : 'var(--primary-color)'}`
                                          }}>
-                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: parsedFeedback ? '0.75rem' : '0' }}>
-                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                                                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-color)', opacity: 0.6, whiteSpace: 'nowrap' }}>
-                                                         {new Date(item.createdAt).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}
-                                                     </span>
+                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: parsedFeedback && (parsedFeedback.comment || parsedFeedback.aiProcessed?.adjustments_for_next) ? '0.75rem' : '0' }}>
+                                                 <div style={{ width: '42px', flexShrink: 0, textAlign: 'center', lineHeight: 1.1 }}>
+                                                     <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{new Date(item.createdAt).getDate()}</div>
+                                                     <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                                         {new Date(item.createdAt).toLocaleDateString('pt-PT', { weekday: 'short' }).slice(0, 3)}
+                                                     </div>
+                                                 </div>
+                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, fontSize: '0.95rem' }}>
                                                          {item.boxWod?.title || item.globalWod?.name || item.scheduledWorkout?.focus || tvTitle || 'Treino'}
                                                      </div>
+                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                                                         {itemLoad && (
+                                                             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>{itemLoad.minutes} min</span>
+                                                         )}
+                                                         {parsedFeedback?.sets && (() => { const sm = setLogSummary(parsedFeedback.sets); return (
+                                                             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>{sm.done}/{sm.planned} séries{sm.volume ? ` · ${sm.volume.toLocaleString('pt-PT')} kg` : ''}</span>
+                                                         ); })()}
+                                                         {parsedFeedback?.feel && (
+                                                             <span title="Como te sentiste" style={{ fontSize: '0.85rem' }}>{['😫', '😕', '😐', '🙂', '💪'][parsedFeedback.feel - 1]}</span>
+                                                         )}
+                                                         {itemLoad && (
+                                                             <span title={itemLoad.estimated ? 'Carga estimada' : 'Carga = minutos × RPE'} style={{ fontSize: '0.68rem', fontWeight: 800, color: METRIC_COLORS.load, background: 'rgba(220, 38, 38, 0.08)', padding: '1px 7px', borderRadius: '999px', fontVariantNumeric: 'tabular-nums' }}>
+                                                                 carga {itemLoad.estimated ? '~' : ''}{itemLoad.load} pts
+                                                             </span>
+                                                         )}
+                                                         <span style={{ fontSize: '0.58rem', fontWeight: 800, opacity: 0.55, textTransform: 'uppercase', background: 'var(--surface-color)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                             {item.type === 'plan_feedback' ? 'Plano' : item.type === 'tv_timer' ? 'TV' : item.type}
+                                                         </span>
+                                                     </div>
                                                  </div>
-                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                                                     <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary-color)' }}>
-                                                         {parsedFeedback ? `RPE ${parsedFeedback.rpe}` : item.score}
-                                                     </span>
-                                                     <span style={{ 
-                                                         fontSize: '0.6rem', 
-                                                         fontWeight: 800, 
-                                                         opacity: 0.5, 
-                                                         textTransform: 'uppercase', 
-                                                         background: 'var(--surface-color)', 
-                                                         padding: '2px 6px', 
-                                                         borderRadius: '4px' 
+                                                 {parsedFeedback ? (
+                                                     <div title="Esforço percebido (RPE)" style={{
+                                                         width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
+                                                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                         background: `hsl(${Math.max(0, 140 - parsedFeedback.rpe * 14)} 75% 45%)`, color: 'white', lineHeight: 1
                                                      }}>
-                                                         {item.type === 'plan_feedback' ? 'TREINADOR' : item.type === 'tv_timer' ? 'TV' : item.type}
-                                                     </span>
-                                                 </div>
+                                                         <span style={{ fontSize: '1.05rem', fontWeight: 900 }}>{parsedFeedback.rpe}</span>
+                                                         <span style={{ fontSize: '0.5rem', fontWeight: 800, opacity: 0.9 }}>RPE /10</span>
+                                                     </div>
+                                                 ) : (
+                                                     (() => {
+                                                         const sc = formatScore(item.score);
+                                                         return (
+                                                             <div style={{ textAlign: 'right', flexShrink: 0, lineHeight: 1.1 }}>
+                                                                 <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>{sc.value}</div>
+                                                                 <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>{sc.label}</div>
+                                                             </div>
+                                                         );
+                                                     })()
+                                                 )}
                                              </div>
 
                                              {parsedFeedback ? (
@@ -246,6 +429,7 @@ export default function HistoryView({ onBack }) {
                                                  </div>
                                              )}
                                          </div>
+                                         </React.Fragment>
                                      );
                                  })}
                             </div>
@@ -376,6 +560,18 @@ export default function HistoryView({ onBack }) {
                 .history-item {
                     border-left: 4px solid var(--primary-color);
                 }
+                .range-btn {
+                    border: none; background: transparent; color: var(--text-muted);
+                    font: inherit; font-size: 0.72rem; font-weight: 800; padding: 0.35rem 0.6rem;
+                    border-radius: 0.55rem; cursor: pointer; transition: all 0.2s ease;
+                }
+                .range-btn.active { background: var(--bg-color); color: var(--primary-color); box-shadow: 0 2px 4px rgb(0 0 0 / 0.08); }
+                .scope-chip {
+                    border: 1.5px solid var(--surface-color); background: transparent; color: var(--text-muted);
+                    font: inherit; font-size: 0.85rem; font-weight: 800; padding: 0.5rem 1rem;
+                    border-radius: 999px; cursor: pointer; transition: all 0.2s ease;
+                }
+                .scope-chip.active { background: var(--text-main); border-color: var(--text-main); color: var(--bg-color); }
             `}</style>
         </div>
     );

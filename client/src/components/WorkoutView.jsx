@@ -1,8 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Share2, Download, ChevronLeft, Trophy, Clock, Info, X, CheckSquare, TrendingUp, ChevronDown, ChevronUp, Pin, Tv2 } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import FeedbackModal from './FeedbackModal'
 import AirPlayView from './AirPlayView'
+import { StructureBar, MetricStat, ExerciseTrend, SetLogger, BlockBadge } from './training/TrainingUI'
+import { workoutTotals, parseKg, parseReps, setLogSummary, exerciseHistory, isBoxResult, blockLetter, blockLabels, estimate1RM, youtubeThumb, STATUS } from '../lib/training'
+
+// Séries planeadas de um exercício, pré-preenchidas com as repetições e a carga do plano.
+const initialSets = (ex) => {
+    const n = Math.min(20, Math.max(1, parseInt(ex.sets, 10) || 1))
+    return Array.from({ length: n }, () => ({ reps: parseReps(ex.reps), kg: parseKg(ex.weight_h), done: false }))
+}
 
 // Execution notes database linked to crossfit.com movements
 const EXERCISE_NOTES = {
@@ -85,6 +93,45 @@ export default function WorkoutView({ data, onBack, onPin }) {
         boxWodId,
         globalWodId
     } = data || {}
+    const totals = workoutTotals(data)
+    const isPersonal = !boxWodId
+    // O registo das séries fica guardado no browser enquanto o treino decorre,
+    // para não se perder se a página recarregar a meio.
+    const logKey = `ft_setlog_${scheduledWorkoutId || globalWodId || summary.structure || 'treino'}`
+    const [setLog, setSetLog] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(logKey) || 'null')
+            if (saved?.log) return saved
+        } catch { /* sem registo guardado */ }
+        const log = {}
+        exercises.forEach((ex, i) => { if ((ex.phase || 'main') === 'main') log[i] = { name: ex.name, sets: initialSets(ex) } })
+        return { log, startedAt: null }
+    })
+    const [history, setHistory] = useState([])
+    const logSummary = setLogSummary(Object.values(setLog.log))
+    const mainIndexes = exercises.map((ex, i) => ((ex.phase || 'main') === 'main' ? i : null)).filter(i => i != null)
+    const mainLabels = blockLabels(mainIndexes.map(i => exercises[i]))
+
+    useEffect(() => {
+        try { localStorage.setItem(logKey, JSON.stringify(setLog)) } catch { /* armazenamento indisponível */ }
+    }, [setLog, logKey])
+
+    useEffect(() => {
+        if (!isPersonal) return
+        apiFetch('history').then(r => r.json()).then(d => setHistory(Array.isArray(d) ? d.filter(h => !isBoxResult(h)) : [])).catch(() => {})
+    }, [isPersonal])
+
+    const updateSets = (i, sets) => setSetLog(prev => ({
+        log: { ...prev.log, [i]: { ...prev.log[i], sets } },
+        startedAt: prev.startedAt || (sets.some(s => s.done) ? Date.now() : null)
+    }))
+    // Recordes batidos neste treino face ao histórico (1RM estimado por exercício).
+    const newPRs = Object.values(setLog.log).map(ex => {
+        const top = Math.max(0, ...ex.sets.filter(st => st.done).map(st => estimate1RM(st.kg, st.reps) || 0))
+        const prev = Math.max(0, ...exerciseHistory(history, ex.name).map(h => h.e1rm || 0))
+        return top > 0 && prev > 0 && top > prev ? { name: ex.name, e1rm: Math.round(top * 10) / 10, gain: Math.round((top - prev) * 10) / 10 } : null
+    }).filter(Boolean)
+    const elapsedMin = setLog.startedAt ? Math.max(1, Math.round((Date.now() - setLog.startedAt) / 60000)) : null
     const [showAirPlay, setShowAirPlay] = useState(false)
     const [infoExpanded, setInfoExpanded] = useState(null)
     const [phaseInfoExpanded, setPhaseInfoExpanded] = useState({})
@@ -233,12 +280,11 @@ export default function WorkoutView({ data, onBack, onPin }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div>
-                        <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Duração</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800 }}>{totalTime} min</div>
-                    </div>
-                    <div>
+                <div style={{ display: 'flex', gap: '1.25rem', marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <MetricStat dark label="Duração" value={totals.minutes} unit="min" />
+                    {!boxWodId && totals.exercises > 0 && <MetricStat dark label="Exercícios" value={totals.exercises} />}
+                    {!boxWodId && totals.sets > 0 && <MetricStat dark label="Séries" value={totals.sets} />}
+                    <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Foco</div>
                         <div style={{ fontSize: '1rem', fontWeight: 800 }}>{summary.type || 'Híbrido'}</div>
                     </div>
@@ -256,6 +302,24 @@ export default function WorkoutView({ data, onBack, onPin }) {
                         <Tv2 size={16} /> AirPlay
                     </button>
                 </div>
+
+                {!boxWodId && (
+                    <div style={{ marginTop: '1.1rem' }}>
+                        <StructureBar data={data} height={52} dark labels />
+                    </div>
+                )}
+
+                {isPersonal && logSummary.planned > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, marginBottom: '6px', fontVariantNumeric: 'tabular-nums' }}>
+                            <span>{logSummary.done}/{logSummary.planned} séries</span>
+                            <span style={{ opacity: 0.75 }}>{logSummary.volume > 0 ? `${logSummary.volume.toLocaleString('pt-PT')} kg volume` : ''}</span>
+                        </div>
+                        <div style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${logSummary.compliance || 0}%`, background: STATUS.done.color, borderRadius: '999px', transition: 'width 0.3s ease' }} />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Intent & Stimulus Box */}
@@ -372,14 +436,29 @@ export default function WorkoutView({ data, onBack, onPin }) {
                                 {phaseExercises.map((ex, idx) => {
                                     const note = findExerciseNote(ex.name);
                                     const isExpanded = infoExpanded === (idx + ex.name);
+                                    const globalIdx = exercises.indexOf(ex);
+                                    const logged = isPersonal ? setLog.log[globalIdx] : null;
+                                    const block = mainIndexes.includes(globalIdx) ? mainLabels[mainIndexes.indexOf(globalIdx)] : null;
+                                    const letter = block?.label;
+                                    const allDone = logged?.sets.every(st => st.done);
                                     return (
                                         <div key={idx} className="premium-card exercise-card" style={{ padding: '1.25rem', background: 'white', position: 'relative', overflow: 'hidden' }}>
                                             {/* Decorative side bar */}
-                                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--primary-color)', opacity: 0.8 }}></div>
+                                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: allDone ? STATUS.done.color : 'var(--primary-color)', opacity: 0.8, transition: 'background 0.3s ease' }}></div>
                                             
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>{ex.name}</h4>
+                                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                                                    {letter && <BlockBadge letter={letter} color={allDone ? STATUS.done.color : block?.superset ? '#7c3aed' : undefined} />}
+                                                    {youtubeThumb(note?.url) && (
+                                                        <a href={note.url} target="_blank" rel="noopener noreferrer" aria-label={`Ver vídeo de ${ex.name}`} style={{ position: 'relative', flexShrink: 0, width: '56px', height: '42px', borderRadius: '0.5rem', overflow: 'hidden', display: 'block', background: 'var(--surface-color)' }}>
+                                                            <img src={youtubeThumb(note.url)} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)', color: 'white', fontSize: '0.9rem' }}>▶</span>
+                                                        </a>
+                                                    )}
+                                                    <div style={{ minWidth: 0 }}>
+                                                        {block?.superset && <div style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.08em', color: '#7c3aed' }}>SUPERSET</div>}
+                                                        <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>{ex.name}</h4>
+                                                    </div>
                                                 </div>
                                                 <div style={{ textAlign: 'right', marginLeft: '1rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                                                     <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary-color)' }}>{ex.sets} <span style={{ opacity: 0.4, fontSize: '0.9rem' }}>×</span> {ex.reps}</div>
@@ -415,8 +494,14 @@ export default function WorkoutView({ data, onBack, onPin }) {
                                             </div>
 
                                             {expandedEvolution[ex.name] && (
-                                                <div className="animate-fade" style={{ fontSize: '0.8rem', fontWeight: 600, padding: '10px 12px', background: '#f0fdf4', color: '#166534', borderRadius: '0.5rem', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <TrendingUp size={14} /> Carga Base: {(ex.weight_h || ex.rm_percent) && (ex.weight_h !== '—' && ex.rm_percent !== '—') ? (ex.weight_h || ex.rm_percent) : ex.reps} (Estável)
+                                                <div className="animate-fade" style={{ marginTop: '12px', padding: '0.75rem', background: 'var(--surface-color)', borderRadius: '0.75rem' }}>
+                                                    <ExerciseTrend sessions={exerciseHistory(history, ex.name)} />
+                                                </div>
+                                            )}
+
+                                            {logged && !completed && (
+                                                <div style={{ marginTop: '0.9rem', paddingTop: '0.9rem', borderTop: '1px dashed var(--surface-color)' }}>
+                                                    <SetLogger sets={logged.sets} onChange={(sets) => updateSets(globalIdx, sets)} />
                                                 </div>
                                             )}
 
@@ -511,6 +596,15 @@ export default function WorkoutView({ data, onBack, onPin }) {
                     <div style={{ color: '#22c55e', marginBottom: '1rem' }}><Trophy size={64} style={{ margin: '0 auto' }} /></div>
                     <h2 style={{ color: '#166534', fontWeight: 900 }}>Treino Concluído!</h2>
                     <p style={{ color: '#166534', opacity: 0.8 }}>O teu resultado foi guardado no teu histórico.</p>
+                    {newPRs.length > 0 && (
+                        <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {newPRs.map(pr => (
+                                <div key={pr.name} style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#92400e', borderRadius: '0.9rem', padding: '0.6rem 0.9rem', fontWeight: 800 }}>
+                                    🏆 Novo recorde: {pr.name} — {pr.e1rm} kg (+{pr.gain})
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -523,10 +617,13 @@ export default function WorkoutView({ data, onBack, onPin }) {
                 <FeedbackModal
                     workoutId={scheduledWorkoutId}
                     workoutFocus={summary.structure}
+                    setLog={Object.values(setLog.log)}
+                    defaultDuration={elapsedMin >= 10 ? elapsedMin : totals.minutes}
                     onClose={() => setShowFeedbackModal(false)}
                     onSuccess={() => {
+                        try { localStorage.removeItem(logKey) } catch { /* nada a limpar */ }
                         setCompleted(true);
-                        setTimeout(() => onBack(), 2000);
+                        setTimeout(() => onBack(), newPRs.length ? 6000 : 2000);
                     }}
                 />
             )}

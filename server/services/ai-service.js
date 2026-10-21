@@ -236,6 +236,7 @@ const generateWithAI = async (provider, params) => {
         weight_m: ex.weight_scaled || '-',
         adaptation: ex.adaptation || '',
         safety_notes: ex.safety_notes || '',
+        superset: /^[A-Z]{1,2}$/.test(String(ex.superset || '').trim().toUpperCase()) ? String(ex.superset).trim().toUpperCase() : null,
         duration: ((parseInt(ex.sets) || 3) * 60) + ((parseInt(ex.sets) || 3) * (ex.rest_seconds || 60)),
         order: order++
       });
@@ -418,6 +419,7 @@ const generateMultiDayPlan = async (provider, params) => {
           adaptation: ex.adaptation || '',
           rm_percent: ex.weight_scaled || '-',
           safety_notes: ex.safety_notes || '',
+          superset: /^[A-Z]{1,2}$/.test(String(ex.superset || '').trim().toUpperCase()) ? String(ex.superset).trim().toUpperCase() : null,
           order: idx + 1
         }))
       }))
