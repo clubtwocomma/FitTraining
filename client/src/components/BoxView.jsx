@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Award, Plus, Trash2, CheckCircle2, Clock, MapPin, ChevronRight, ChevronLeft, Play, QrCode, UserCheck, XCircle, Settings, Edit2, Copy, Share, Flame, Sparkles, Tv2 } from 'lucide-react';
+import { Calendar, Users, Award, Plus, Trash2, CheckCircle2, Clock, MapPin, ChevronRight, ChevronLeft, Play, QrCode, UserCheck, XCircle, Settings, Edit2, Copy, Share, Flame, Sparkles, Tv2, CreditCard } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import ScheduleAdmin from './admin/ScheduleAdmin';
 import AirPlayView from './AirPlayView';
+import BillingAdmin from './box/BillingAdmin';
+import MyAccount, { BookingRulesNote } from './box/MyAccount';
 
 const MonthCalendar = ({ selectedDate, onDateSelect }) => {
     const [viewDate, setViewDate] = useState(new Date(selectedDate));
@@ -255,6 +257,7 @@ const ManagementDashboard = ({ user, handleUpdateRole, mgmtTab, setMgmtTab, isMa
                     { id: 'attendance', name: 'Presenças', icon: Users },
                     { id: 'classes', name: 'Gestão Aulas', icon: Calendar },
                     { id: 'users', name: 'Atletas', icon: UserCheck, adminOnly: true },
+                    { id: 'billing', name: 'Mensalidades', icon: CreditCard, adminOnly: true },
                     { id: 'settings', name: 'Definições', icon: Settings, adminOnly: true }
                 ].map(t => (
                     (!t.adminOnly || isManager) && (
@@ -264,6 +267,8 @@ const ManagementDashboard = ({ user, handleUpdateRole, mgmtTab, setMgmtTab, isMa
                     )
                 ))}
             </div>
+
+            {mgmtTab === 'billing' && isManager && <BillingAdmin boxId={boxId} classes={classes} />}
 
             {mgmtTab === 'attendance' && (
                 <div className="attendance-mgmt">
@@ -323,7 +328,10 @@ const ManagementDashboard = ({ user, handleUpdateRole, mgmtTab, setMgmtTab, isMa
     );
 }
 
-const MemberSchedule = ({ classes, user, bookingLoading, handleBooking }) => {
+const MemberSchedule = ({ classes, user, bookingLoading, handleBooking, account }) => {
+    // Com mensalidades ligadas e um plano com tipos de aula definidos, as aulas fora
+    // do plano aparecem como "Não incluído" (o servidor também recusa a marcação).
+    const planTypes = account?.billingEnabled && account?.membership?.plan?.classTypes?.length ? new Set(account.membership.plan.classTypes) : null;
     const [expandedClassId, setExpandedClassId] = useState(null);
     return (
         <div className="member-schedule animate-fade">
@@ -339,6 +347,7 @@ const MemberSchedule = ({ classes, user, bookingLoading, handleBooking }) => {
                     const isPast = new Date(cls.startTime) <= new Date();
                     const booking = cls.bookings?.find(b => b.userId === user?.id && ['CONFIRMED', 'WAITLISTED'].includes(b.status));
                     const isFull = cls._count?.bookings >= cls.capacity;
+                    const notIncluded = !!planTypes && !booking && !planTypes.has(cls.name || '');
                     return (
                         <React.Fragment key={cls.id}>
                             <div className="premium-card hover-lift"
@@ -396,15 +405,16 @@ const MemberSchedule = ({ classes, user, bookingLoading, handleBooking }) => {
                                             width: 'auto',
                                             padding: '0.6rem 1.25rem',
                                             fontSize: '0.9rem',
-                                            background: booking ? 'transparent' : isPast ? '#e2e8f0' : 'var(--primary-color)',
-                                            color: booking ? 'var(--danger)' : isPast ? 'var(--text-muted)' : 'white',
+                                            background: booking ? 'transparent' : (isPast || notIncluded) ? '#e2e8f0' : 'var(--primary-color)',
+                                            color: booking ? 'var(--danger)' : (isPast || notIncluded) ? 'var(--text-muted)' : 'white',
                                             border: booking ? '1.5px solid var(--danger)' : 'none',
-                                            opacity: ((!booking && isFull) || isPast) ? 0.5 : 1,
-                                            cursor: isPast ? 'not-allowed' : 'pointer'
+                                            opacity: ((!booking && isFull) || isPast || notIncluded) ? 0.5 : 1,
+                                            cursor: (isPast || notIncluded) ? 'not-allowed' : 'pointer'
                                         }}
-                                        disabled={(!booking && isFull && !booking) || bookingLoading === cls.id || (isPast && !booking)}
+                                        disabled={(!booking && isFull && !booking) || bookingLoading === cls.id || (isPast && !booking) || notIncluded}
+                                        title={notIncluded ? 'Esta aula não está incluída no teu plano' : undefined}
                                     >
-                                        {isPast && !booking ? 'Terminada' : booking ? 'Cancelar' : (isFull ? 'Lotado' : 'Reservar')}
+                                        {isPast && !booking ? 'Terminada' : booking ? 'Cancelar' : notIncluded ? 'Não incluído' : (isFull ? 'Lotado' : 'Reservar')}
                                     </button>
                                 </div>
                             </div>
@@ -890,6 +900,13 @@ export default function BoxView({ user, onBack }) {
 
     const isManager = user?.role === 'ADMIN' || user?.role === 'BOX_ADMIN';
     const isCoach = isManager || user?.role === 'COACH';
+    const [account, setAccount] = useState(null);
+
+    // Plano, mensalidade e regras de marcação do próprio utilizador nesta box.
+    useEffect(() => {
+        if (!user?.boxId) return;
+        apiFetch('/me/membership').then(r => r.ok ? r.json() : null).then(setAccount).catch(() => {});
+    }, [user?.boxId, view]);
 
     useEffect(() => {
         if (user?.boxId) {
@@ -1180,9 +1197,10 @@ export default function BoxView({ user, onBack }) {
                 {[
                     { id: 'schedule', name: 'Aulas', icon: Calendar },
                     { id: 'wod', name: 'WOD', icon: Flame },
+                    { id: 'account', name: 'A minha conta', icon: CreditCard, hidden: !account?.billingEnabled },
                     { id: 'management', name: 'Gestão', icon: Settings, coachOnly: true }
                 ].map(t => (
-                    (!t.coachOnly || isCoach) && (
+                    (!t.coachOnly || isCoach) && !t.hidden && (
                         <button key={t.id} onClick={() => setView(t.id)} className={`tab-btn ${view === t.id ? 'active' : ''}`} style={{ flex: 1, fontSize: '0.85rem', padding: '0.75rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                             <t.icon size={16} /> {t.name}
                         </button>
@@ -1191,13 +1209,18 @@ export default function BoxView({ user, onBack }) {
             </div>
 
             {view === 'schedule' && (
-                <MemberSchedule
-                    classes={classes}
-                    user={user}
-                    bookingLoading={bookingLoading}
-                    handleBooking={handleBooking}
-                />
+                <>
+                    <BookingRulesNote account={account} />
+                    <MemberSchedule
+                        classes={classes}
+                        user={user}
+                        bookingLoading={bookingLoading}
+                        handleBooking={handleBooking}
+                        account={account}
+                    />
+                </>
             )}
+            {view === 'account' && <MyAccount account={account} />}
             {view === 'wod' && (
                 <WodDisplay
                     wods={wods}

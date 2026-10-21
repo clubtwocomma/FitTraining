@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { checkBookingRules } = require('./billing-service');
 const crypto = require('crypto');
 
 /**
@@ -176,25 +177,10 @@ async function bookClass(userId, classId) {
             throw new Error('Já estás inscrito nesta aula.');
         }
 
-        // Check if user already has a CONFIRMED booking for this day
-        const startOfDay = new Date(targetClass.startTime);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(targetClass.startTime);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const existingDaily = await tx.booking.findFirst({
-            where: {
-                userId: parseInt(userId),
-                status: 'CONFIRMED',
-                gymClass: {
-                    startTime: { gte: startOfDay, lte: endOfDay }
-                }
-            }
-        });
-
-        if (existingDaily) {
-            throw new Error('Já tens uma reserva confirmada para este dia. Limite de 1 aula por dia.');
-        }
+        // Regras de marcação da box (antecedência, limites por dia/tipo) e, se a box
+        // cobrar mensalidades, as restrições do plano do atleta. Sem regras
+        // configuradas mantém-se o limite antigo de 1 aula confirmada por dia.
+        await checkBookingRules(tx, userId, targetClass);
 
         const confirmedCount = targetClass.bookings.filter(b => b.status === 'CONFIRMED').length;
         const isFull = confirmedCount >= targetClass.capacity;

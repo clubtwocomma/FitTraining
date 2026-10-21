@@ -476,6 +476,10 @@ app.delete('/api/superadmin/boxes/:id', authenticateToken, authorizeRoles('ADMIN
       }
       await tx.gymClass.deleteMany({ where: { boxId } });
       await tx.boxWod.deleteMany({ where: { boxId } });
+      // Mensalidades da box (pagamentos → inscrições → planos, pela ordem das FKs)
+      await tx.payment.deleteMany({ where: { boxId } });
+      await tx.membership.deleteMany({ where: { boxId } });
+      await tx.membershipPlan.deleteMany({ where: { boxId } });
       await tx.user.updateMany({ where: { boxId }, data: { boxId: null, role: 'ATHLETE', boxValidated: false } });
       await tx.box.delete({ where: { id: boxId } });
     });
@@ -637,6 +641,51 @@ app.patch('/api/boxes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMI
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Mensalidades (ligáveis por box) e regras de marcação ---
+const billing = require('./services/billing-service');
+const boxAdminOnly = [authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMIN'), requireSameBox];
+const sendErr = (res, err) => res.status(/não encontrad/i.test(err.message) ? 404 : 400).json({ error: err.message });
+
+app.get('/api/boxes/:id/billing', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.getBillingOverview(req.params.id)); } catch (err) { sendErr(res, err); }
+});
+app.patch('/api/boxes/:id/billing/settings', ...boxAdminOnly, async (req, res) => {
+  try { await billing.updateBillingSettings(req.params.id, req.body || {}); res.json(await billing.getBillingOverview(req.params.id)); } catch (err) { sendErr(res, err); }
+});
+app.post('/api/boxes/:id/billing/plans', ...boxAdminOnly, async (req, res) => {
+  try { res.status(201).json(await billing.createPlan(req.params.id, req.body || {})); } catch (err) { sendErr(res, err); }
+});
+app.patch('/api/boxes/:id/billing/plans/:planId', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.updatePlan(req.params.id, req.params.planId, req.body || {})); } catch (err) { sendErr(res, err); }
+});
+app.put('/api/boxes/:id/billing/members/:userId', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.assignMembership(req.params.id, req.params.userId, req.body || {})); } catch (err) { sendErr(res, err); }
+});
+app.delete('/api/boxes/:id/billing/members/:userId', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.endMembership(req.params.id, req.params.userId)); } catch (err) { sendErr(res, err); }
+});
+app.get('/api/boxes/:id/billing/members/:userId/payments', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.memberPayments(req.params.id, req.params.userId)); } catch (err) { sendErr(res, err); }
+});
+app.post('/api/boxes/:id/billing/members/:userId/payments', ...boxAdminOnly, async (req, res) => {
+  try {
+    const payment = await billing.recordPayment(req.params.id, req.params.userId, req.user.userId, req.body || {});
+    createNotification(parseInt(req.params.userId), 'payment_recorded', `Pagamento de ${(payment.amountCents / 100).toFixed(2).replace('.', ',')} € registado. Obrigado!`, null);
+    res.status(201).json(payment);
+  } catch (err) { sendErr(res, err); }
+});
+app.delete('/api/boxes/:id/billing/payments/:paymentId', ...boxAdminOnly, async (req, res) => {
+  try { res.json(await billing.deletePayment(req.params.id, req.params.paymentId)); } catch (err) { sendErr(res, err); }
+});
+
+// O atleta vê o seu plano, estado, histórico de pagamentos e as regras da box.
+app.get('/api/me/membership', authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { boxId: true } });
+    res.json(await billing.getMyMembership(req.user.userId, user?.boxId));
+  } catch (err) { sendErr(res, err); }
 });
 
 // --- WOD & Class Management (Box Scoped) ---
