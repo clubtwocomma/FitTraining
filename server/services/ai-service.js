@@ -9,6 +9,8 @@ const http = require('http');
 // ─── Server default API key (Pollinations.ai) ───
 const DEFAULT_API_KEY = process.env.POLLINATIONS_API_KEY;
 const POLLINATIONS_BASE = 'https://text.pollinations.ai/openai';  // OpenAI-compatible endpoint
+// Modelo de recurso quando o escolhido devolve resposta vazia ou JSON inválido.
+const FALLBACK_MODEL = 'openai';
 
 /**
  * Make a real HTTP POST to an OpenAI-compatible chat/completions endpoint.
@@ -49,9 +51,16 @@ function callChatCompletions(baseUrl, apiKey, messages, model) {
             return;
           }
           const data = JSON.parse(body);
-          const content = data.choices?.[0]?.message?.content;
+          const choice = data.choices?.[0];
+          const content = choice?.message?.content;
           if (!content) {
-            reject(new Error('AI response missing content'));
+            // Modelos com raciocínio (ex.: deepseek) podem gastar o limite de tokens
+            // todo a "pensar" e devolver a resposta vazia (finish_reason = length).
+            const reasoningLen = (choice?.message?.reasoning_content || choice?.message?.reasoning || '').length;
+            console.error(`[AI] Resposta sem conteúdo (modelo ${model}): finish_reason=${choice?.finish_reason}, raciocínio=${reasoningLen} chars, usage=${JSON.stringify(data.usage || {})}`);
+            const err = new Error('AI response missing content');
+            err.code = 'EMPTY_CONTENT';
+            reject(err);
             return;
           }
           resolve(content);
@@ -133,17 +142,31 @@ async function callGeminiAdapter(baseUrl, apiKey, systemPrompt, userPrompt, mode
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt }
   ];
-  const rawResponse = await callChatCompletions(baseUrl, apiKey, messages, model);
-  console.log(`[AI RAW] Response length: ${rawResponse.length} chars`);
-  if (rawResponse.length > 0) {
-    console.log(`[AI RAW] Start: ${rawResponse.substring(0, 100)}...`);
-    console.log(`[AI RAW] End: ...${rawResponse.substring(rawResponse.length - 100)}`);
+  const attempt = async (m) => {
+    const t0 = Date.now();
+    const rawResponse = await callChatCompletions(baseUrl, apiKey, messages, m);
+    console.log(`[AI RAW] Response length: ${rawResponse.length} chars (modelo ${m}, ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+    if (rawResponse.length > 0) {
+      console.log(`[AI RAW] Start: ${rawResponse.substring(0, 100)}...`);
+      console.log(`[AI RAW] End: ...${rawResponse.substring(rawResponse.length - 100)}`);
+    }
+    const parsed = extractJSON(rawResponse);
+    if (!parsed) {
+      const err = new Error('AI response was not valid JSON');
+      err.code = 'INVALID_JSON';
+      throw err;
+    }
+    return parsed;
+  };
+  try {
+    return await attempt(model);
+  } catch (err) {
+    // Uma nova tentativa com um modelo sem raciocínio quando a resposta vem vazia
+    // ou truncada (JSON inválido). Erros de rede/HTTP não são repetidos.
+    if (!['EMPTY_CONTENT', 'INVALID_JSON'].includes(err.code) || model === FALLBACK_MODEL) throw err;
+    console.warn(`[AI] ${err.code} com o modelo ${model}; nova tentativa com ${FALLBACK_MODEL}.`);
+    return attempt(FALLBACK_MODEL);
   }
-  const parsed = extractJSON(rawResponse);
-  if (!parsed) {
-    throw new Error('AI response was not valid JSON');
-  }
-  return parsed;
 }
 
 /**

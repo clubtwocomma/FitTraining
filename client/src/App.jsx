@@ -15,7 +15,7 @@ import HistoryView from './components/HistoryView'
 import NotificationBell from './components/NotificationBell'
 import { MoonStar, SunDim, Power, BellRing, Info, Dumbbell, Settings, Calendar, Play, Medal, Flame, BookOpen, LayoutGrid, Users, ChevronRight, Trophy, TrendingUp, Sparkles, Clock, User, ShieldCheck } from 'lucide-react'
 import PasswordChangeModal from './components/PasswordChangeModal'
-import { apiFetch } from './lib/api'
+import { apiFetch, apiJob } from './lib/api'
 import { FormPills, WeekStrip, StructureBar, StatusBadge, formAdvice } from './components/training/TrainingUI'
 import { localKey, workoutDayKey, workoutStatus, isBoxResult, performanceSeries, resultLoad } from './lib/training'
 import { CheckinCard, EventCountdown, GoalsModal } from './components/training/HomeCards'
@@ -438,12 +438,13 @@ function App() {
     const handleGenerate = async (params) => {
         setGenerating(true)
         try {
-            const response = await apiFetch('/generate', {
+            const response = await apiJob('/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...params, profile })
             })
             const data = await response.json()
+            if (!response.ok) throw new Error(data.details || data.error || `Erro do servidor (${response.status})`)
             setWorkoutData(data)
             setView('workout')
         } catch (err) {

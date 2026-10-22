@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Calendar, ClipboardList, Target, ChevronLeft, ChevronRight, Sparkles, Download, CheckCircle2 } from 'lucide-react'
-import { apiFetch } from '../lib/api'
+import { apiFetch, apiJob } from '../lib/api'
 
 const QUESTIONS = [
     {
@@ -200,7 +200,7 @@ export default function TrainingPlanner({ onBack, profile }) {
     const generatePlan = async (data) => {
         setIsGenerating(true)
         try {
-            const res = await apiFetch('generate-plan', {
+            const res = await apiJob('generate-plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...data, profile })
@@ -208,7 +208,7 @@ export default function TrainingPlanner({ onBack, profile }) {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || `Erro do servidor (${res.status})`);
+                throw new Error(errorData.details || errorData.error || `Erro do servidor (${res.status})`);
             }
             const generatedPlan = await res.json();
             setPlan(generatedPlan);

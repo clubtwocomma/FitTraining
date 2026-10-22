@@ -17,6 +17,40 @@ const aiLimiter = rateLimit({
   message: { error: 'Limite de gerações por IA atingido. Tenta novamente em 15 minutos.' }
 });
 
+// ─── Gerações por IA em segundo plano ────────────────────────────────────────
+// Um plano de 7 dias demora ~60 s ou mais a gerar, e o nginx corta pedidos
+// ao fim de 60 s (504). Com o cabeçalho "X-Async: 1" o servidor responde logo
+// 202 { jobId } e o handler continua a correr; o cliente consulta
+// GET /api/jobs/:id até o estado ser "done" ou "error". Sem o cabeçalho,
+// tudo funciona como antes (versões antigas da app em cache).
+const aiJobs = new Map();
+const AI_JOB_TTL_MS = 30 * 60 * 1000;
+
+function asyncJob(req, res, next) {
+  if (req.get('X-Async') !== '1') return next();
+  const jobId = require('crypto').randomUUID();
+  const job = { userId: req.user.userId, status: 'running', createdAt: Date.now() };
+  aiJobs.set(jobId, job);
+  res.status(202).json({ jobId });
+  // Daqui em diante o handler escreve no job em vez de na resposta (já enviada).
+  let code = 200;
+  res.status = (c) => { code = c; return res; };
+  res.json = (body) => {
+    job.status = code >= 400 ? 'error' : 'done';
+    job.httpStatus = code;
+    job.body = body;
+    job.finishedAt = Date.now();
+    return res;
+  };
+  res.send = res.json;
+  next();
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - AI_JOB_TTL_MS;
+  aiJobs.forEach((j, id) => { if (j.createdAt < cutoff) aiJobs.delete(id); });
+}, 5 * 60 * 1000).unref();
+
 // Rate limiter for login (brute-force protection)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -289,7 +323,7 @@ app.get('/api/painstorms', async (req, res) => {
   }
 });
 
-app.post('/api/generate', authenticateToken, aiLimiter, (req, res) => {
+app.post('/api/generate', authenticateToken, aiLimiter, asyncJob, (req, res) => {
   try {
     const { time, muscleGroups, type, equipment, aiProvider, profile, clientApiKey, optimization } = generateSchema.parse(req.body);
 
@@ -641,6 +675,13 @@ app.patch('/api/boxes/:id', authenticateToken, authorizeRoles('ADMIN', 'BOX_ADMI
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+app.get('/api/jobs/:id', authenticateToken, (req, res) => {
+  const job = aiJobs.get(req.params.id);
+  if (!job || job.userId !== req.user.userId) return res.status(404).json({ error: 'Tarefa não encontrada ou expirada.' });
+  if (job.status === 'running') return res.json({ status: 'running', elapsedMs: Date.now() - job.createdAt });
+  res.json({ status: job.status, httpStatus: job.httpStatus, body: job.body });
 });
 
 // --- Mensalidades (ligáveis por box) e regras de marcação ---
@@ -1425,7 +1466,7 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/generate-plan', authenticateToken, aiLimiter, async (req, res) => {
+app.post('/api/generate-plan', authenticateToken, aiLimiter, asyncJob, async (req, res) => {
   try {
     const data = req.body;
     const userId = req.user.userId;
@@ -1695,7 +1736,7 @@ app.post('/api/test-ai', authenticateToken, aiLimiter, async (req, res) => {
   }
 });
 
-app.post('/api/generate-workout', authenticateToken, aiLimiter, async (req, res) => {
+app.post('/api/generate-workout', authenticateToken, aiLimiter, asyncJob, async (req, res) => {
   try {
     const { prompt, goal } = req.body;
     const result = await generateWod(prompt, goal);
@@ -1706,7 +1747,7 @@ app.post('/api/generate-workout', authenticateToken, aiLimiter, async (req, res)
   }
 });
 
-app.post('/api/generate-box-plan', authenticateToken, aiLimiter, async (req, res) => {
+app.post('/api/generate-box-plan', authenticateToken, aiLimiter, asyncJob, async (req, res) => {
   try {
     const { prompt, days } = req.body;
     const plan = await generateBoxWodPlan(prompt, parseInt(days) || 5);

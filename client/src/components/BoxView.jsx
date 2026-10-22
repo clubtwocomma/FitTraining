@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Award, Plus, Trash2, CheckCircle2, Clock, MapPin, ChevronRight, ChevronLeft, Play, QrCode, UserCheck, XCircle, Settings, Edit2, Copy, Share, Flame, Sparkles, Tv2, CreditCard } from 'lucide-react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiJob } from '../lib/api';
 import ScheduleAdmin from './admin/ScheduleAdmin';
 import AirPlayView from './AirPlayView';
 import BillingAdmin from './box/BillingAdmin';
@@ -542,7 +542,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
         }
         setAiLoading(true);
         try {
-            const res = await apiFetch('/generate-workout', {
+            const res = await apiJob('/generate-workout', {
                 method: 'POST',
                 body: JSON.stringify({ prompt: aiPrompt, goal: 'Box Daily WOD' })
             });
@@ -572,7 +572,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
         setAiLoading(true);
         try {
             // 1. Gerar via IA
-            const res = await apiFetch('/generate-box-plan', {
+            const res = await apiJob('/generate-box-plan', {
                 method: 'POST',
                 body: JSON.stringify({ prompt: planPrompt, days: planDays })
             });
@@ -598,7 +598,7 @@ const WodDisplay = ({ wods, isCoach, user, fetchData, selectedDate, isEnrolled }
                     alert('Erro ao publicar programação em lote.');
                 }
             } else {
-                alert('Erro ao gerar plano via IA.');
+                alert(`Erro ao gerar plano via IA${wodsArray?.details ? `: ${wodsArray.details}` : '.'}`);
             }
         } catch (err) {
             console.error(err);
